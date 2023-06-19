@@ -3,11 +3,9 @@
 
 
 import os, sys
-
 from Bio import SeqIO 
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
+import csv
+
 
 '''
 Use outputs of MMseqs2 clustering to generate fasta files for each clusters + size statistics
@@ -17,24 +15,14 @@ Args
 
 '''
 
-dir = sys.argv[1]
-cov = sys.argv[2]
+cov = sys.argv[1]
 
-
-if not os.path.isdir(f"/home/simon.herman/Bureau/SCERs_pep/{dir}"):
-
-    raise IsADirectoryError("Wrong directory, cannot change")
-
-os.chdir(f"/home/simon.herman/Bureau/SCERs_pep/{dir}")
-
-if not os.path.isdir("clusters"):
-    os.mkdir("clusters")
-
-reads = list(SeqIO.parse("clu_seq.fasta", format = "fasta"))
+reads = list(SeqIO.parse("tmp/clu_seq.fasta", format = "fasta"))
 
 i = 0
 buffer = []
 sizes = []
+dic = {}
 for read in reads:
 
     if read.seq == "":
@@ -52,9 +40,10 @@ for read in reads:
         buffer = []
         i = i+1
         
-        handle = open(f"sizes{cov}.txt","a")
-        handle.write(str(cluster_size)+"\n")
-        handle.close()
+        if cluster_size in dic.keys():
+            dic[cluster_size] = dic[cluster_size] + 1
+        else:
+            dic[cluster_size] = 1
 
     else:
 
@@ -70,3 +59,18 @@ if not os.path.isdir(f"clusters/size_{cluster_size}"):
 handle = open(f"clusters/size_{cluster_size}/cluster_n{i}","w") 
 SeqIO.write(buffer, handle, format = "fasta")
 handle.close()
+
+if cluster_size in dic.keys():
+    dic[cluster_size] = dic[cluster_size] + 1
+else:
+    dic[cluster_size] = 1
+
+# Write size statistics
+with open('../../output/yeasts_stats.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(['Cluster size', 'count'])  # writing headers
+    for key, value in dic.items():
+        writer.writerow([key, value])
+
+
+

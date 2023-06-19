@@ -1,5 +1,6 @@
 import yaml
 import subprocess
+from test import test
 
 
 def main():
@@ -8,9 +9,12 @@ def main():
     dataMap = yaml.safe_load(open('env.yaml'))
     for cov in dataMap['Coverages']:
 
-        clustering = f"./cluster.sh {cov}"
-        process = subprocess.Popen(clustering.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
+        arg = cov
+
+        subprocess.call(["bash", "./clustering.sh", arg])
+
+    
 
 if __name__ == "__main__":
     main()
+    test()
