@@ -31,7 +31,7 @@ elongate_ids = set(
     
 )
 
-filtered_data = elongate_data.filter(
+filtered_data = elongates.filter(
     pl.col("num_cluster").is_in(elongate_ids)
 )
 
@@ -53,8 +53,6 @@ for key in infos.keys():
         
         five_prime_db.extend(tmp["5utr"].values())
         three_prime_db.extend(tmp["3utr"].values())
-        chimeres_db.extend(create_chimeric_sequences(tmp, liste, cds_dict))
-
 
 SeqIO.write(five_prime_db, f"{DB_PATH}/five_prime_db.fasta", "fasta")
 SeqIO.write(three_prime_db, f"{DB_PATH}/three_prime_db.fasta", "fasta")
