@@ -46,6 +46,27 @@ def get_specie(re_dict, id):
         
     return specie
 
+
+def is_methionine_after_nter(sequence: str, nter_length: int) -> bool:
+
+    """
+    This function checks if the first amino acid following an N-terminal elongation is a Methionine.
+    If the Methionine is found just after the elongation, it suggests that the elongation could be due 
+    to a misplaced start codon in the genome annotation (GFF file), rather than a biological event.
+    
+    Parameters:
+    sequence (str): The amino acid sequence of the protein.
+    nter_length (int): The length of the N-terminal elongation.
+    
+    Returns:
+    bool: True if the first amino acid following the elongation is Methionine, False otherwise.
+    """
+    try:
+        next_aa_after_elongation = sequence[nter_length]
+    except IndexError:
+        return False  # nter_length is longer than the sequence itself
+    return int(next_aa_after_elongation.upper() == 'M')
+
 def count_dashes(string,reverse = False):
 
     """
@@ -86,7 +107,7 @@ def count_dashes(string,reverse = False):
 
 import networkx as nx
 
-def subgraph_counts(lengths_list,cluster_id, cluster_size, localisation, threshold = 15):
+def subgraph_counts(lengths_list,cluster_id, cluster_size, localisation, threshold = 5):
 
     """
     Create a complete graph with the nodes as the numbers in the input list. Edges are drawn between nodes only if 
@@ -140,16 +161,17 @@ def subgraph_counts(lengths_list,cluster_id, cluster_size, localisation, thresho
     for sub in S:
 
         lengths = [data["value"] for name,data in sub.nodes(data=True)]
-        sublist = [cluster_id,
-                    cluster_size, 
-                    f"subgraph_{subgraph_id}", # Id of the event
-                    localisation, # Nter or Cter
-                    nb_subgraphs, # Total Nb of elongation events in the cluster
-                    len(lengths), # Nb of sequences in this particular elongation event 
-                    np.std(lengths), # Standard deviation of the lengths of the elongates in this particular elongation event
-                    np.mean(lengths), # Mean of the lengths of the elongates in this particular elongation event
-        ]
-        toplist.append(sublist)
+        subdict = {
+            'cluster_id': cluster_id,
+            'cluster_size': cluster_size,
+            'subgraph_id': f"subgraph_{subgraph_id}",
+            'localisation': localisation,
+            'nb_subgraphs': nb_subgraphs,
+            'sequences_in_event': len(lengths),
+            'std_dev_lengths': np.std(lengths),
+            'mean_lengths': np.mean(lengths),
+        }
+        toplist.append(subdict)
         subgraph_id += 1
 
     return toplist, nb_subgraphs
@@ -173,7 +195,7 @@ def get_elongates(sequence, max_length, upstream = False):
 
     Returns:
     --------
-        tuple: A tuple containing the following elements:
+        dict: A dict containing the following elements:
             - elongated_subsequence (str): The extracted elongated subsequence as a string.
             - gaps (int): The total number of gaps in the elongated subsequence.
             - gap_openings (int): The number of gap openings in the elongated subsequence.
@@ -204,7 +226,13 @@ def get_elongates(sequence, max_length, upstream = False):
             elongate_seq.append(sequence[len(sequence)-i-1])
             i += 1
 
-        return (''.join(elongate_seq)[::-1], gaps, gap_openings, nb_aa, len(elongate_seq))
+        return {
+            'Cter_elongate': ''.join(elongate_seq)[::-1],
+            'Cter_gaps': gaps,
+            'Cter_gap_openings': gap_openings,
+            'Cter_nb_aa': nb_aa,
+            'Cter_elongate_length': len(elongate_seq)
+                }
     
     elif upstream == True:
         
@@ -224,7 +252,13 @@ def get_elongates(sequence, max_length, upstream = False):
             elongate_seq.append(sequence[i])
             i += 1
             
-        return (''.join(elongate_seq), gaps, gap_openings, nb_aa, len(elongate_seq))
+        return {
+            'Nter_elongate': ''.join(elongate_seq),
+            'Nter_gaps': gaps,
+            'Nter_gap_openings': gap_openings,
+            'Nter_nb_aa': nb_aa,
+            'Nter_elongate_length': len(elongate_seq)
+                }
 
 def compute_ratios(elongate_length, seq_length):
 
@@ -264,12 +298,9 @@ def process_record(record, cluster_name, cluster_size, regex_dict):
 
     Returns:
     --------
-    sublist : list
+    record_info : dict
         A list containing information for a single sequence in the cluster.
-    Nter_dashes : int
-        Number of dashes at the N-terminus of the sequence.
-    Cter_dashes : int
-        Number of dashes at the C-terminus of the sequence.
+    
     """
 
     id = record.id
@@ -279,101 +310,147 @@ def process_record(record, cluster_name, cluster_size, regex_dict):
     
     cluster_size = re.match(pattern="size_(\d+)", string=cluster_size).group(1)
 
-    sublist = [
-        cluster_size,
-        str(cluster_name),
-        id,
-        get_specie(regex_dict, id),
-        tmp_seq,
-        len(tmp_seq),
-        Nter_dashes,
-        Cter_dashes
-    ]
+    record_info = {
+
+        'cluster_size': cluster_size,
+        'cluster_name': str(cluster_name),
+        'seq_id': id,
+        'species': get_specie(regex_dict, id),
+        'sequence': tmp_seq,
+        'sequence_length': len(tmp_seq),
+        'Nter_dashes': Nter_dashes,
+        'Cter_dashes': Cter_dashes
+
+    }
+
 
     # Nter_dashes and Cter_dashes are returned separately to avoid computing them twice 
-    return sublist, Nter_dashes, Cter_dashes
+    return record_info
 
+def update_record_info(record_infos, max_Nter, max_Cter):
+
+    """
+    Update the information of a record with the elongation lengths.
+
+    Parameters:
+    record_infos (dict): dictionary containing the record's information.
+    max_Nter (int): maximum elongation length at the N-terminus.
+    max_Cter (int): maximum elongation length at the C-terminus.
+
+    Returns:
+    record_infos (dict): Updated dictionary of the record's information.
+    """
+
+    Nter_infos = get_elongates(record_infos["sequence"], max_length=max_Nter, upstream=True)
+    Cter_infos = get_elongates(record_infos["sequence"], max_length=max_Cter)
+
+    record_infos["max_Nter"] = max_Nter
+    record_infos["max_Cter"] = max_Cter
+    record_infos.update(Nter_infos)
+    record_infos.update(Cter_infos)
+    record_infos["Nter_ratio"] = compute_ratios(record_infos["Nter_elongate_length"], record_infos["sequence_length"])
+    record_infos["Cter_ratio"] = compute_ratios(record_infos["Cter_elongate_length"], record_infos["sequence_length"])
+    record_infos["is_max_Nter"] = 1 if record_infos["Nter_elongate_length"] == max_Nter else 0
+    record_infos["is_max_Cter"] = 1 if record_infos["Cter_elongate_length"] == max_Cter else 0
+    return record_infos
+
+def compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict):
+
+    """
+    Compute the maximum elongation length for a set of records.
+
+    Parameters:
+    records (list): list of records.
+    cluster_name (str): name of the cluster.
+    cluster_size (int): size of the cluster.
+    regex_dict (dict): dictionary of regex patterns.
+
+    Returns:
+    max_Nter (int): maximum elongation length at the N-terminus.
+    max_Cter (int): maximum elongation length at the C-terminus.
+    infos_list (list): list of dictionaries containing record information.
+    """
+
+    max_Nter = 0
+    max_Cter = 0
+    infos_list = []
+
+    for record in records:
+        record_infos = process_record(record, cluster_name, cluster_size, regex_dict)
+        infos_list.append(record_infos)
+        max_Nter = max(max_Nter, record_infos['Nter_dashes'])
+        max_Cter = max(max_Cter, record_infos['Cter_dashes'])
+        
+    return max_Nter, max_Cter, infos_list
+
+def get_elongation_events(Nter_lengths, Cter_lengths, cluster_name, cluster_size):
+
+    """
+    Get the elongation events for a set of records.
+
+    Parameters:
+    Nter_lengths (list): list of elongation lengths at the N-terminus.
+    Cter_lengths (list): list of elongation lengths at the C-terminus.
+    cluster_name (str): name of the cluster.
+    cluster_size (int): size of the cluster.
+
+    Returns:
+    Nter_events_infos (list): list of dictionaries containing N-terminus elongation event information.
+    Cter_events_infos (list): list of dictionaries containing C-terminus elongation event information.
+    """
+
+    Nter_events_infos, Number_nter_events = subgraph_counts(
+        Nter_lengths,
+        cluster_id = cluster_name, 
+        cluster_size = cluster_size, 
+        localisation = "Nter", 
+        threshold = 5)
+    
+    Cter_events_infos, Number_cter_events = subgraph_counts(
+        Cter_lengths,
+        cluster_id = cluster_name, 
+        cluster_size = cluster_size, 
+        localisation = "Cter", 
+        threshold = 5)
+
+    return Nter_events_infos, Cter_events_infos, Number_nter_events, Number_cter_events
 
 
 def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
 
-    elongates_list = []
-    infos_lists = []
+    """
+    Process multiple records by computing max elongations, updating records with elongations, and gathering events.
+
+    Parameters:
+    records (list): list of records.
+    cluster_name (str): name of the cluster.
+    cluster_size (int): size of the cluster.
+    regex_dict (dict): dictionary of regex patterns.
+
+    Returns:
+    infos_list (list): list of dictionaries containing updated record information.
+    event_lists (list): list of dictionaries containing elongation event information.
+    """
+    max_Nter, max_Cter, elongates_infos_list = compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict)
     Nter_lengths = []
     Cter_lengths = []
-    max_Nter = 0
-    max_Cter = 0
+    for record_infos in elongates_infos_list:
+        record_infos = update_record_info(record_infos, max_Nter, max_Cter)
+        Nter_lengths.append(record_infos["Nter_elongate_length"])
+        Cter_lengths.append(record_infos["Cter_elongate_length"])
 
-    # Process each record using process_record()
-    for record in records:
-
-        # sublist = [cluster size, cluster_name, seq id, specie, CDS, CDS length, Nter_dashes, Cter_dashes]
-        sublist, Nter_dashes, Cter_dashes = process_record(record, cluster_name, cluster_size, regex_dict)
-
-        
-        elongates_list.append(sublist)
-
-        # For each sequence in the cluster, we keep track of the maximum N-terminus and C-terminus number 
-        # of dashes to compute the elongated sequences later. 
-        # For two sequences aligned by MUSCLE, dashes represent the gaps, the " lack " of amino acids 
-        # compared to the other sequence. 
-        max_Nter = max(max_Nter, Nter_dashes)
-        max_Cter = max(max_Cter, Cter_dashes)
+    Nter_events_infos, Cter_events_infos, Number_nter_events, Number_cter_events = get_elongation_events(Nter_lengths, Cter_lengths, cluster_name, cluster_size)
     
+    for record_infos in elongates_infos_list:
+        record_infos["Nter_events"] = Number_nter_events
+        record_infos["Cter_events"] = Number_cter_events
+        record_infos["Meth_after_Nter"] = is_methionine_after_nter(sequence = record_infos["sequence"],
+                                                                   nter_length = record_infos["Nter_elongate_length"])
+
+    event_lists = []
+    if Nter_events_infos is not None:
+        event_lists.extend(Nter_events_infos)
+    if Cter_events_infos is not None:
+        event_lists.extend(Cter_events_infos)
     
-    # Once every record from records has been seen, we can fix the maximum N-terminus 
-    # and C-terminus length difference between sequences in the cluster
-    # We use these infos to compute the elongated sequences for every sequence in the cluster
-    for list in elongates_list:
-
-        # infos = [elongated sequence, gaps, gap_openings, nb_aa, length of elongated sequence]
-        Nter_infos = get_elongates(list[4], max_length=max_Nter, upstream=True)
-        Cter_infos = get_elongates(list[4], max_length=max_Cter)
-
-        list.append(max_Nter)
-        list.append(max_Cter)
-        list.extend(Nter_infos)
-        list.extend(Cter_infos)
-        list.append(compute_ratios(Nter_infos[-1], list[5]))
-        list.append(compute_ratios(Cter_infos[-1], list[5]))
-
-        # Checks if the elongated sequence is the longest one for the N-terminus and C-terminus
-        if Nter_infos[-1] == max_Nter:
-            list.append(1)
-        else:
-            list.append(0)
-        if Cter_infos[-1] == max_Cter:
-            list.append(1)
-        else:
-            list.append(0)
-
-        
-        Nter_lengths.append(Nter_infos[-1])
-        Cter_lengths.append(Cter_infos[-1])
-
-    # Compute the number of elongation events per cluster for each side
-    # See subgraph_counts() function for more details
-
-    # Also compute infos about the elongation events
-    # elongations_infos is a list of lists, each sublist containing the following information :
-    # [ cluster id, cluster_size, event_id, nb of event in the cluster, nb of sequences in a particular elongation event, sd of elongate length for current event ]
-    Nter_events_infos, Nter_nb_elongation_events = subgraph_counts(Nter_lengths, cluster_id = cluster_name, cluster_size = cluster_size, localisation = "Nter", threshold = 10)
-    Cter_events_infos, Cter_nb_elongation_events = subgraph_counts(Cter_lengths, cluster_id = cluster_name, cluster_size = cluster_size, localisation = "Cter", threshold = 10)
-
-    if Nter_events_infos != None:
-        infos_lists.extend(Nter_events_infos)
-    if Cter_events_infos != None:
-        infos_lists.extend(Cter_events_infos)
-    
-    for list in elongates_list:
-
-        list.extend((Nter_nb_elongation_events, Cter_nb_elongation_events)) # need to turn elongations_infos into an OD to avoid hard coding the index
-
-    # At the end of this function, every sublist in infos_list contains the following information :
-
-    # [size, cluster_name, seq_id, specie, sequence, length, Nter_dashes, Cter_dashes, 
-    # max_Nter, max_Cter, Elongate length, gaps, gap_openings, nb_aa, length_elongate, Nter_subgraphs, Cter_subgraphs, 
-    # Nter_ratio, Cter_ratio,] to be updated
-
-    return elongates_list, infos_lists
-
+    return elongates_infos_list, event_lists

@@ -8,12 +8,14 @@ Version: 0.01
 """
 
 
-__all__ = ["read_multifasta", "multifasta_to_dict", "extract_ids", "str_to_raw", "remove_temp_file"]
+__all__ = ["read_multifasta", "multifasta_to_dict", "extract_ids", "str_to_raw", "remove_temp_file", "write_dicts_to_csv"]
 
+import os
+import csv
 from Bio.SeqIO import parse
 from Bio.Seq import Seq
 from .classes import _Seq
-import os
+
 
 def remove_temp_file(cov, size, file = "temp.fasta",skip_check=False):
 
@@ -31,7 +33,7 @@ def remove_temp_file(cov, size, file = "temp.fasta",skip_check=False):
     """
 
 
-    temp_file_path = f"{cov}/clusters/{size}/{file}"
+    temp_file_path = f"work/{cov}/clusters/{size}/{file}"
     
     if not skip_check:
         if not os.path.exists(temp_file_path):
@@ -41,8 +43,6 @@ def remove_temp_file(cov, size, file = "temp.fasta",skip_check=False):
         os.remove(temp_file_path)
     except FileNotFoundError:
         print(f"File error : {cov}, {size}, {temp_file_path}")
-
-
 
 def read_multifasta(filename) -> list:
 
@@ -79,7 +79,6 @@ def read_multifasta(filename) -> list:
             seq_list.append(_Seq(seq_id, sequence))
 
     return seq_list
-
 
 def multifasta_to_dict(path, genome = False):
 
@@ -165,3 +164,23 @@ def extend_list_with_dict_values(input_dict, input_list):
         result_list.extend(value)
     return result_list
 
+def write_dicts_to_csv(dicts, filename):
+    """
+    Appends a list of dictionaries to a CSV file, creating the file and writing a header row if necessary.
+
+    Arguments:
+    - dicts: List of dictionaries. All dictionaries must have the same keys.
+    - filename: Output CSV filename.
+    """
+    # Check if file exists and is non-empty
+    file_exists = os.path.isfile(filename) and os.path.getsize(filename) > 0
+
+    with open(filename, 'a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=dicts[0].keys())
+
+        if not file_exists:
+            # File didn't exist or was empty, so write the header
+            writer.writeheader()
+
+        for d in dicts:
+            writer.writerow(d)

@@ -36,7 +36,7 @@ import polars as pl
 from collections import defaultdict
 
 
-def translate_frames(dna_sequence,specie, seq_id,length,utr):
+def translate_frames(dna_sequence, specie, seq_id, length, utr):
 
     """
     Translates a given DNA sequence into protein sequences for the three different reading frames. Frame 1 is
@@ -59,23 +59,24 @@ def translate_frames(dna_sequence,specie, seq_id,length,utr):
     result = dict()
     dna_seq = dna_sequence if isinstance(dna_sequence, Seq) else Seq(dna_sequence)
 
-    remainder = len(dna_seq) % 3
-    if remainder != 0:
-        dna_seq += "N" * (3 - remainder)
+    # Correct for length to avoid warnings when translating
+    frame = len(dna_seq) % 3
+    if frame != 0:
+        dna_seq += "N" * (3 - frame)
 
     # Translate DNA sequence into protein for 3 different reading frames
     # We divide length by 3 because the length of the UTR is given in nucleotides
 
     result["frame_0"] = SeqRecord(seq = Seq(dna_seq.translate()), 
-                                  id = f"{seq_id}_{specie}_{utr}_frame:0_length:{length/3}", 
+                                  id = f"{seq_id}_{specie}_{utr}_f0_length:{length/3}", 
                                   description = specie)
     
     result["frame_1"] = SeqRecord(seq = Seq(dna_seq[1:].translate()), 
-                                  id = f"{seq_id}_{specie}_{utr}_frame:1_length:{length/3}", 
+                                  id = f"{seq_id}_{specie}_{utr}_f1_length:{length/3}", 
                                   description = specie)
     
     result["frame_2"] = SeqRecord(seq = Seq(dna_seq[2:].translate()), 
-                                  id = f"{seq_id}_{specie}_{utr}_frame:2_length:{length/3}", 
+                                  id = f"{seq_id}_{specie}_{utr}_f2_length:{length/3}", 
                                   description = specie)
 
     return result
@@ -166,8 +167,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict):
 
     for row in gff.iter_rows(named=True): # Named = True to iter with column names
 
-        
-        coordinates.append((int(row['Start'])-1, int(row['End'])-1))
+        coordinates.append((int(row['Start'])-1, int(row['End'])-1)) # -1 for python indexing
         
     coordinates = sorted(coordinates, key=lambda x: x[0]) # Sort coordinates by start position
 
