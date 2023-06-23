@@ -41,9 +41,6 @@ def analyseClusters(cov, verbose = False, purge = False):
                     print(f"Muscle error : {error}")
                     break
 
-                if not os.path.isfile(f"work/{cov}/clusters/{size}/temp.fasta"):
-                    print("ouaaaaaaaaaaaaah")
-
                 if cluster_name not in cluster_mem:
                     cluster_mem.add(cluster_name)
                 else : 

@@ -2,6 +2,8 @@ import subprocess
 import polars as pl 
 
 
+__all__ = ["test"]
+
 def test():
 
     command = 'find . -type f -name "*.pep" -exec awk \'/^>/ {print $0}\' {} \\; | wc -l'
