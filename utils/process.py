@@ -226,12 +226,13 @@ def get_elongates(sequence, max_length, upstream = False):
             elongate_seq.append(sequence[len(sequence)-i-1])
             i += 1
 
+        elongate_seq = ''.join(elongate_seq)[::-1]
         return {
-            'Cter_elongate': ''.join(elongate_seq)[::-1],
+            'Cter_elongate': elongate_seq,
             'Cter_gaps': gaps,
             'Cter_gap_openings': gap_openings,
             'Cter_nb_aa': nb_aa,
-            'Cter_elongate_length': len(elongate_seq)
+            'Cter_elongate_length': len(elongate_seq.replace("-", ""))
                 }
     
     elif upstream == True:
@@ -251,13 +252,14 @@ def get_elongates(sequence, max_length, upstream = False):
 
             elongate_seq.append(sequence[i])
             i += 1
-            
+
+        elongate_seq = ''.join(elongate_seq)   
         return {
-            'Nter_elongate': ''.join(elongate_seq),
+            'Nter_elongate': elongate_seq,
             'Nter_gaps': gaps,
             'Nter_gap_openings': gap_openings,
             'Nter_nb_aa': nb_aa,
-            'Nter_elongate_length': len(elongate_seq)
+            'Nter_elongate_length': len(elongate_seq.replace("-", ""))
                 }
 
 def compute_ratios(elongate_length, seq_length):
@@ -352,6 +354,8 @@ def update_record_info(record_infos, max_Nter, max_Cter):
     record_infos["Cter_ratio"] = compute_ratios(record_infos["Cter_elongate_length"], record_infos["sequence_length"])
     record_infos["is_max_Nter"] = 1 if record_infos["Nter_elongate_length"] == max_Nter else 0
     record_infos["is_max_Cter"] = 1 if record_infos["Cter_elongate_length"] == max_Cter else 0
+    record_infos["is_min_Nter"] = 1 if record_infos["Nter_elongate_length"] == 0 else 0
+    record_infos["is_min_Cter"] = 1 if record_infos["Cter_elongate_length"] == 0 else 0
     return record_infos
 
 def compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict):

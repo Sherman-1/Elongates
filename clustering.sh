@@ -29,7 +29,7 @@ mmseqs result2flat -v 1 DB DB DB_clu_seq clu_seq.fasta
 
 cd .. || exit
 
-python3 ../../flat2multi.py ${cov}
+python3 ../flat2multi.py ${cov}
 
 echo -e "\n\n\n-------------------------"
 echo -e "Done for coverage ${cov}"

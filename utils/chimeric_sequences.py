@@ -31,6 +31,7 @@ smooth functioning of the script.
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import polars as pl
+from utils.files import write_dicts_to_csv
 
 
 
@@ -57,25 +58,24 @@ def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster):
     result = dict()
     dna_seq = dna_sequence if isinstance(dna_sequence, Seq) else Seq(dna_sequence)
 
-    # Correct for length to avoid warnings when translating
-    frame = len(dna_seq) % 3
-    if frame != 0:
-        dna_seq += "N" * (3 - frame)
+    if length < 45:
+
+        return None
 
     # Translate DNA sequence into protein for 3 different reading frames
     # We divide length by 3 because the length of the UTR is given in nucleotides
 
-    result["frame_0"] = SeqRecord(seq = Seq(dna_seq.translate()), 
-                                  id = f"{seq_id}-{cluster}-{utr}-f0-{int(length/3)}", 
-                                  description = specie)
-    
-    result["frame_1"] = SeqRecord(seq = Seq(dna_seq[1:].translate()), 
-                                  id = f"{seq_id}-{cluster}-{utr}-f1-{int(length/3)}", 
-                                  description = specie)
-    
-    result["frame_2"] = SeqRecord(seq = Seq(dna_seq[2:].translate()), 
-                                  id = f"{seq_id}-{cluster}-{utr}-f2-{int(length/3)}", 
-                                  description = specie)
+    result["frame_0"] = SeqRecord(seq = Seq(dna_seq[:length - length % 3].translate()), 
+                                id = f"{seq_id}-{cluster}-{utr}-f0-{int(length/3)}", 
+                                description = specie)
+
+    result["frame_1"] = SeqRecord(seq = Seq(dna_seq[1:length - (length - 1) % 3].translate()), 
+                                id = f"{seq_id}-{cluster}-{utr}-f1-{int(length/3)}", 
+                                description = specie)
+
+    result["frame_2"] = SeqRecord(seq = Seq(dna_seq[2:length - (length - 2) % 3].translate()), 
+                                id = f"{seq_id}-{cluster}-{utr}-f2-{int(length/3)}", 
+                                description = specie)
 
     return result
 
@@ -133,7 +133,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
 
     Parameters:
     --------
-    cds_infos (tuple): Tuple containing the specie, sequence id and length of the CDS for which the UTRs are to be
+    cds_infos (dict): dict containing the specie, sequence id and length of the CDS for which the UTRs are to be
                     translated.
     gff_dict (dict): Dictionary containing the gff files for each specie.
     genome_dict (dict): Dictionary containing the FASTA files for each specie.
@@ -156,6 +156,8 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
     coordinates = [] # End and start coordinates of each CDS features
     result_dict = {} # Dictionary to store the results
 
+    
+
     if specie == "unknown":
 
         return None
@@ -175,42 +177,68 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
 
     for row in gff.iter_rows(named=True): # Named = True to iter with column names
 
-        coordinates.append((int(row['Start'])-1, int(row['End'])-1)) # -1 for python indexing
+        coordinates.append(sorted((int(row['Start'])-1, int(row['End'])-1))) # -1 for python indexing
         
     coordinates = sorted(coordinates, key=lambda x: x[0]) # Sort coordinates by start position
 
     # coordinates[0] = (start, end) of the first exon
     # coordinates[-1] = (start, end) of the last exon
     
-    start_5 = coordinates[0][0]-FIVE_LENGTH if coordinates[0][0]-FIVE_LENGTH >= 0 else 0 # Get the start position of the 5' UTR
-    end_3 = coordinates[-1][1]+1+THREE_LENGTH if coordinates[-1][1]+1+THREE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the end position of the 3' UTR
+
+    if strand == "+":
+
+        start_5 = coordinates[0][0]-FIVE_LENGTH if coordinates[0][0]-FIVE_LENGTH >= 0 else 0 # Get the start position of the 5' UTR
+        end_3 = coordinates[-1][1]+1+THREE_LENGTH if coordinates[-1][1]+1+THREE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the end position of the 3' UTR
+        
+        five_prime = genome_dict[specie][strand_id]["seq"][
+
+            start_5:coordinates[0][0]
+
+            ] # Get the 5' sequence
+        
+            # +1 for -1,1 because GFF points to the last nucleotide of the stop codon
+
+        three_prime = genome_dict[specie][strand_id]["seq"][
+            coordinates[-1][1]+1:end_3
+            ] # Get the 3' sequence
+
     
-    five_prime = genome_dict[specie][strand_id]["seq"][
-
-        start_5:coordinates[0][0]
-
-        ] # Get the 5' sequence
-    
-        # +1 for -1,1 because GFF points to the last nucleotide of the stop codon
-
-    three_prime = genome_dict[specie][strand_id]["seq"][
-        coordinates[-1][1]+1:end_3
-        ] # Get the 3' sequence
-
-
     # Reverse complement if the strand is negative, don't forget to reverse the coordinates
     if strand == "-":
 
-        five_prime, three_prime = three_prime.reverse_complement(), five_prime.reverse_complement()
+        end_5 = coordinates[-1][1]+1+FIVE_LENGTH if coordinates[-1][1]+1+FIVE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the start position of the 5' UTR
+        start_3 = coordinates[0][0]-THREE_LENGTH if coordinates[0][0]-THREE_LENGTH >= 0 else 0 # Get the end position of the 3' UTR
+
+        five_prime = genome_dict[specie][strand_id]["seq"][
+            coordinates[-1][1]+1:end_5
+            ].reverse_complement() # Get the 5' sequence
+        
+        three_prime = genome_dict[specie][strand_id]["seq"][
+            start_3:coordinates[0][0]
+            ].reverse_complement() # Get the 3' sequence
+        
+
+    if len(five_prime) != FIVE_LENGTH or len(three_prime) != THREE_LENGTH:
+
+            write_dicts_to_csv([{"seq_id" : seq_id, "cluster" : cluster, "contig_length " : genome_dict[specie][strand_id]["len"], 
+                                "FIVE_LENGTH" : FIVE_LENGTH, "THREE_LENGTH" : THREE_LENGTH,
+                                "start" : coordinates[0],
+                                "end" : coordinates[-1]}], 
+                                "output/truncated_utr.csv")
+            
     
+
+
     # Translate the sequences for each frame
     result_dict["5utr"] = translate_frames(five_prime, specie = specie, 
-                                           seq_id = seq_id, length = FIVE_LENGTH, 
+                                           seq_id = seq_id, length = len(five_prime), 
                                            utr = "5utr", cluster = cluster)
     result_dict["3utr"] = translate_frames(three_prime, specie = specie, 
-                                           seq_id = seq_id, length= THREE_LENGTH, 
+                                           seq_id = seq_id, length= len(three_prime), 
                                            utr = "3utr", cluster = cluster)
 
+
+    
     return result_dict
 
 
@@ -252,10 +280,3 @@ def create_chimeric_sequences(chimeric_utr_dict, cds_infos, cds_dict):
 
     return chimeric_sequences
 
-def get_elongates(elongates, threshold):
-
-
-
-    filtered = elongates.filter(
-
-        (pl.col("Cter_elongate_length") >= threshold) | (pl.col("Nter_elongate_length") >= threshold)
