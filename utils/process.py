@@ -47,7 +47,7 @@ def get_specie(re_dict, id):
     return specie
 
 
-def is_methionine_after_nter(sequence: str, nter_length: int) -> bool:
+def is_methionine_after_nter(sequence: str, nter_length: int) -> int:
 
     """
     This function checks if the first amino acid following an N-terminal elongation is a Methionine.
@@ -299,7 +299,7 @@ def process_record(record, cluster_name, cluster_size, regex_dict):
     Returns:
     --------
     record_info : dict
-        A list containing information for a single sequence in the cluster.
+        A dict containing information for a single sequence in the cluster.
     
     """
 

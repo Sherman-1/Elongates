@@ -31,7 +31,7 @@ smooth functioning of the script.
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import polars as pl
-from collections import defaultdict
+
 
 
 def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster):
@@ -66,20 +66,20 @@ def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster):
     # We divide length by 3 because the length of the UTR is given in nucleotides
 
     result["frame_0"] = SeqRecord(seq = Seq(dna_seq.translate()), 
-                                  id = f"{seq_id}_{cluster}_{utr}_f0_{int(length/3)}", 
+                                  id = f"{seq_id}-{cluster}-{utr}-f0-{int(length/3)}", 
                                   description = specie)
     
     result["frame_1"] = SeqRecord(seq = Seq(dna_seq[1:].translate()), 
-                                  id = f"{seq_id}_{cluster}_{utr}_f1_{int(length/3)}", 
+                                  id = f"{seq_id}-{cluster}-{utr}-f1-{int(length/3)}", 
                                   description = specie)
     
     result["frame_2"] = SeqRecord(seq = Seq(dna_seq[2:].translate()), 
-                                  id = f"{seq_id}_{cluster}_{utr}_f2_{int(length/3)}", 
+                                  id = f"{seq_id}-{cluster}-{utr}-f2-{int(length/3)}", 
                                   description = specie)
 
     return result
 
-def get_infos_for_chimeres(threshold, elongates):
+def get_infos_for_UTRs(threshold, elongates):
 
     """
     Retrieves information for chimeric sequences from the filtered dataset. Input clusters correspond 
@@ -88,38 +88,40 @@ def get_infos_for_chimeres(threshold, elongates):
 
     Parameters:
     --------
-    clusters (set): The clusters ids to filter the dataset by. 
+    threshold (int): The threshold value from which we consider a cluster to be elongated.
+    elongates (pl.DataFrame): A polars DataFrame containing the extracted data for all clusters, regardless of their elongation status.
 
     Returns:
     --------
-    out (dict): A dict of lists of tuples, where each tuple contains the specie, sequence id and length of the CDS.
+    out (dict): A dict of dicts
 
-    Structure of out:
-    --------
-    {cluster_id: [(specie, sequence_id, length), (specie, sequence_id, length), ...], ...}
-    """
+    """ 
 
-    out = dict()
-    
-    elongate_ids = elongates.filter(
+    elongates_filtered = elongates.filter(
         (pl.col('max_Nter') > threshold) | (pl.col("max_Cter") > threshold)
-        )["cluster_name"].unique().to_list()
+        )[["cluster_name", "species", "seq_id", "max_Nter", "max_Cter","Nter_elongate","Cter_elongate"]]
+
+    out = {}
+    
+    def add_to_dict(row):
         
-
-    filtered_data = elongates.filter(
-        pl.col("cluster_name").is_in(elongate_ids)
-    )
-
-
-    for cluster in elongate_ids:
-
-        infos = filtered_data.filter(pl.col("cluster_name") == cluster)[["species","seq_id","max_Nter","max_Cter"]]
-
-        for row in infos.iter_rows(named=True):
-            out[cluster] = { "species" : row["species"],
-                                  "seq_id" : row["seq_id"], 
-                                  "three_length" : row["max_Cter"],
-                                  "five_length" : row["max_Nter"]}
+        cluster_name = row[0]
+        info = {
+            "species": row[1],
+            "seq_id": row[2],
+            "five_length": row[3]*3, # We multiply by 3 to get the length in nucleotides
+            "three_length": row[4]*3, # We multiply by 3 to get the length in nucleotides
+        }
+        
+        if cluster_name in out:
+            out[cluster_name].append(info)
+        else:
+            out[cluster_name] = [info]
+            
+        return tuple(row)
+            
+            
+    elongates_filtered.apply(add_to_dict)
 
     return out
 
@@ -149,8 +151,8 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
     # Initilize
     specie = cds_infos["species"]
     seq_id = cds_infos["seq_id"]
-    THREE_LENGTH = cds_infos["max_Cter"]*2
-    FIVE_LENGTH = cds_infos["max_Nter"]*2
+    FIVE_LENGTH = cds_infos["five_length"]*2
+    THREE_LENGTH = cds_infos["three_length"]*2
     coordinates = [] # End and start coordinates of each CDS features
     result_dict = {} # Dictionary to store the results
 
@@ -211,6 +213,9 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
 
     return result_dict
 
+
+
+
 def create_chimeric_sequences(chimeric_utr_dict, cds_infos, cds_dict):
     
     """
@@ -247,3 +252,10 @@ def create_chimeric_sequences(chimeric_utr_dict, cds_infos, cds_dict):
 
     return chimeric_sequences
 
+def get_elongates(elongates, threshold):
+
+
+
+    filtered = elongates.filter(
+
+        (pl.col("Cter_elongate_length") >= threshold) | (pl.col("Nter_elongate_length") >= threshold)
