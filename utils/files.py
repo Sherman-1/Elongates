@@ -164,9 +164,11 @@ def extend_list_with_dict_values(input_dict, input_list):
         result_list.extend(value)
     return result_list
 
-def write_dicts_to_csv(dicts, filename):
+def write_dicts_to_csv(dicts, filename, mode = "a"):
     """
     Appends a list of dictionaries to a CSV file, creating the file and writing a header row if necessary.
+    Each dict in the list must have the same keys.
+    Each dict in the list will be written as a row in the CSV file.
 
     Arguments:
     - dicts: List of dictionaries. All dictionaries must have the same keys.
@@ -175,7 +177,7 @@ def write_dicts_to_csv(dicts, filename):
     # Check if file exists and is non-empty
     file_exists = os.path.isfile(filename) and os.path.getsize(filename) > 0
 
-    with open(filename, 'a', newline='') as f:
+    with open(filename, mode, newline='') as f:
         writer = csv.DictWriter(f, fieldnames=dicts[0].keys())
 
         if not file_exists:

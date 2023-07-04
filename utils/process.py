@@ -1,8 +1,9 @@
 
 import warnings
 import re 
-import numpy as np
 import itertools
+import networkx as nx
+
 
 def get_specie(re_dict, id):
 
@@ -105,76 +106,52 @@ def count_dashes(string,reverse = False):
         i += 1
     return count
 
-import networkx as nx
 
-def subgraph_counts(lengths_list,cluster_id, cluster_size, localisation, threshold = 5):
+def subgraph_counts(lengths_dict, threshold = 15):
 
     """
-    Create a complete graph with the nodes as the numbers in the input list. Edges are drawn between nodes only if 
-    the absolute difference between the two nodes is less than threshold value.
-    In this case, the nodes are the lengths of every Nter OR Cter elongates. The weight of an edge is the absolute
-    difference between the lengths of the two nodes. 
-    The function removes edges with weight greater than threshold and returns the number of subgraphs in the remaining graph.
-
-    Because 15 amino acids is the minimum length for a peptide to form an helix, it's set as the default threshold value.
-    Consideration only valable for our study scope.
-
-    Args:
-        num_list (list): A list of numbers to be used as nodes in the graph.
-        threshold (int): The maximum allowed weight for an edge in the graph.
+    Given a dictionary of node names and values, this function builds a graph where an edge between two nodes exists 
+    if the absolute difference of their values is less than a given threshold. It then finds all connected subgraphs 
+    in the graph, sorts them in ascending order of their minimum node value, and assigns a unique identifier to each 
+    subgraph. Finally, it returns a dictionary mapping node names to their respective subgraph identifiers.
+    
+    Parameters:
+    lengths_dict (dict): A dictionary mapping node names to values.
+    threshold (int, optional): The maximum absolute difference between two node values for an edge to exist. Default is 15.
 
     Returns:
-        int: The number of subgraphs in the remaining graph after removing edges that have a weight greater than the
-        threshold value.
-
-    Raises:
-        NetworkXError: If the graph contains self-loops.
-
-    Example:
-        >>> lst = [1,4,40,41,60]
-        >>> subgraph_counts(lst, threshold = 10)
-        The number of subgraphs is: 3
+    res_dict (dict): A dictionary mapping node names to their respective subgraph identifiers. Nodes in the same subgraph share the same identifier.
     """
-    G = nx.Graph()
-    toplist = list()
-    cluster_size = re.match(pattern="size_(\d+)", string=cluster_size).group(1)
 
+    G = nx.Graph()
 
     # Add nodes to the graph with custom names and values
-    for name, value in enumerate(lengths_list):
-        G.add_node(name, value=value)
-
+    for name, value in lengths_dict.items():
+        if value != 0:  # Only add the node if its value is not 0
+            G.add_node(name, value=value)
 
     # Add edges between nodes based on the absolute difference of their values
-    threshold = 10
     for node1, node2 in itertools.combinations(G.nodes, 2):
-
         value1 = G.nodes[node1]['value']
         value2 = G.nodes[node2]['value']
         
         if abs(value1 - value2) < threshold:
             G.add_edge(node1, node2)
 
-    S = [G.subgraph(c).copy() for c in nx.connected_components(G)]
-    nb_subgraphs = nx.number_connected_components(G)-1
+    # Create a list of subgraphs, where each subgraph is a connected component of the graph G then sort them by the minimum value of their nodes
+    S = sorted([G.subgraph(c).copy() for c in nx.connected_components(G)], key=lambda x: min(data['value'] for node, data in x.nodes(data=True)))
     subgraph_id = 1
+    res_dict = dict()
     for sub in S:
 
-        lengths = [data["value"] for name,data in sub.nodes(data=True)]
-        subdict = {
-            'cluster_id': cluster_id,
-            'cluster_size': cluster_size,
-            'subgraph_id': f"subgraph_{subgraph_id}",
-            'localisation': localisation,
-            'nb_subgraphs': nb_subgraphs,
-            'sequences_in_event': len(lengths),
-            'std_dev_lengths': np.std(lengths),
-            'mean_lengths': np.mean(lengths),
-        }
-        toplist.append(subdict)
+        for name,data in sub.nodes(data=True):
+
+            res_dict.update({name:subgraph_id})
+
         subgraph_id += 1
 
-    return toplist, nb_subgraphs
+    
+    return res_dict
 
 def get_elongates(sequence, max_length, upstream = False):
 
@@ -387,37 +364,26 @@ def compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict):
         
     return max_Nter, max_Cter, infos_list
 
-def get_elongation_events(Nter_lengths, Cter_lengths, cluster_name, cluster_size):
+def get_elongation_events(elongates_infos_list):
 
-    """
-    Get the elongation events for a set of records.
-
-    Parameters:
-    Nter_lengths (list): list of elongation lengths at the N-terminus.
-    Cter_lengths (list): list of elongation lengths at the C-terminus.
-    cluster_name (str): name of the cluster.
-    cluster_size (int): size of the cluster.
-
-    Returns:
-    Nter_events_infos (list): list of dictionaries containing N-terminus elongation event information.
-    Cter_events_infos (list): list of dictionaries containing C-terminus elongation event information.
-    """
-
-    Nter_events_infos, Number_nter_events = subgraph_counts(
-        Nter_lengths,
-        cluster_id = cluster_name, 
-        cluster_size = cluster_size, 
-        localisation = "Nter", 
-        threshold = 5)
     
-    Cter_events_infos, Number_cter_events = subgraph_counts(
-        Cter_lengths,
-        cluster_id = cluster_name, 
-        cluster_size = cluster_size, 
-        localisation = "Cter", 
-        threshold = 5)
 
-    return Nter_events_infos, Cter_events_infos, Number_nter_events, Number_cter_events
+   
+    Nter_elongates = {record_infos["seq_id"]: record_infos["Nter_elongate_length"] for record_infos in elongates_infos_list}
+    Cter_elongates = {record_infos["seq_id"]: record_infos["Cter_elongate_length"] for record_infos in elongates_infos_list}
+    Nter_events = subgraph_counts(Nter_elongates)
+    Cter_events = subgraph_counts(Cter_elongates)
+    
+ 
+    for d in elongates_infos_list:
+        seq_id = d["seq_id"]
+        d["Nter_sub_clust_ID"] = Nter_events[seq_id] if seq_id in Nter_events.keys() else 0
+        d["Cter_sub_clust_ID"] = Cter_events[seq_id] if seq_id in Cter_events.keys() else 0
+        d["Nter_events"] = max(Nter_events.values()) if bool(Nter_events) else 0
+        d["Cter_events"] = max(Cter_events.values()) if bool(Cter_events) else 0
+        
+
+    return 0
 
 
 def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
@@ -435,6 +401,7 @@ def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
     infos_list (list): list of dictionaries containing updated record information.
     event_lists (list): list of dictionaries containing elongation event information.
     """
+    
     max_Nter, max_Cter, elongates_infos_list = compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict)
     Nter_lengths = []
     Cter_lengths = []
@@ -445,20 +412,7 @@ def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
         record_infos["Meth_after_Nter"] = is_methionine_after_nter(sequence = record_infos["sequence"],
                                                                    nter_length = record_infos["Nter_elongate_length"])
 
-                                                                   
-    Nter_events_infos, Cter_events_infos, Number_nter_events, Number_cter_events = get_elongation_events(Nter_lengths, Cter_lengths, cluster_name, cluster_size)
-    
-    for record_infos in elongates_infos_list:
-        record_infos["Nter_events"] = Number_nter_events
-        record_infos["Cter_events"] = Number_cter_events
-        
 
-    print(elongates_infos_list[0].keys())
-
-    event_lists = []
-    if Nter_events_infos is not None:
-        event_lists.extend(Nter_events_infos)
-    if Cter_events_infos is not None:
-        event_lists.extend(Cter_events_infos)
-    
-    return elongates_infos_list, event_lists
+     
+    get_elongation_events(elongates_infos_list)
+    return elongates_infos_list

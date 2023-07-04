@@ -31,6 +31,7 @@ smooth functioning of the script.
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import polars as pl
+import csv
 from utils.files import write_dicts_to_csv
 
 
@@ -202,6 +203,16 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
             coordinates[-1][1]+1:end_3
             ] # Get the 3' sequence
 
+
+        with open(f"output/{specie}_to_remove.gff", "a") as f:
+                
+            writer = csv.writer(f, delimiter="\t")
+            writer.writerow([
+
+                strand_id, "to_remove", "gene", coordinates[0][0] - len(five_prime) + 1, coordinates[-1][1] + len(three_prime) + 1, ".", "+", ".", f"ID={seq_id};Species={specie};Cluster={cluster}"
+
+            ])
+
     
     # Reverse complement if the strand is negative, don't forget to reverse the coordinates
     if strand == "-":
@@ -218,13 +229,22 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
             ].reverse_complement() # Get the 3' sequence
         
 
+        with open(f"output/{specie}_to_remove.gff", "a", newline='') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow([
+
+                strand_id, "to_remove", "gene", coordinates[0][0]-len(three_prime)+1, coordinates[-1][1] + len(five_prime) +1, ".", "-", ".", f"ID={seq_id};Species={specie};Cluster={cluster}"
+
+            ])
+        
+
     if len(five_prime) != FIVE_LENGTH or len(three_prime) != THREE_LENGTH:
 
             write_dicts_to_csv([{"seq_id" : seq_id, "cluster" : cluster, "contig_length " : genome_dict[specie][strand_id]["len"], 
                                 "FIVE_LENGTH" : FIVE_LENGTH, "THREE_LENGTH" : THREE_LENGTH,
                                 "start" : coordinates[0],
                                 "end" : coordinates[-1]}], 
-                                "output/truncated_utr.csv")
+                                "output/truncated_utr.csv", mode  = "a")
             
     
 
@@ -243,7 +263,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
 
 
 
-
+# Deprecated
 def create_chimeric_sequences(chimeric_utr_dict, cds_infos, cds_dict):
     
     """

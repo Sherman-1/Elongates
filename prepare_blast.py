@@ -3,10 +3,11 @@ import gff3_parser
 from Bio import SeqIO
 import yaml
 from utils import multifasta_to_dict
- 
+from utils.chimeric_sequences import * 
+THRESHOLD = 15
 
 ## Load data
-species = yaml.safe_load(open('env.yaml'))["Species"] # Species will be passed as argument in the future
+species = yaml.safe_load(open('env.yaml'))["Species_order"]["Scer"] # Species will be passed as argument in the future
 elongates = pl.read_csv("output/0.5_elongates.csv", has_header = True)
 
 gff_dict = dict()
@@ -16,11 +17,6 @@ for specie in species:
 
     gff_dict[specie] = pl.from_pandas(gff3_parser.parse_gff3(f"input/{specie}.gff", parse_attributes = True, verbose = False))
     genome_dict[specie] = multifasta_to_dict(f"input/{specie}.fna", genome = True)
-
-
-from utils.chimeric_sequences import * 
-THRESHOLD = 15
-
 
 infosDict = get_infos_for_UTRs(threshold=THRESHOLD, elongates = elongates)
 
