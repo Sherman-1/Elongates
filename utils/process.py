@@ -442,14 +442,18 @@ def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
         record_infos = update_record_info(record_infos, max_Nter, max_Cter)
         Nter_lengths.append(record_infos["Nter_elongate_length"])
         Cter_lengths.append(record_infos["Cter_elongate_length"])
+        record_infos["Meth_after_Nter"] = is_methionine_after_nter(sequence = record_infos["sequence"],
+                                                                   nter_length = record_infos["Nter_elongate_length"])
 
+                                                                   
     Nter_events_infos, Cter_events_infos, Number_nter_events, Number_cter_events = get_elongation_events(Nter_lengths, Cter_lengths, cluster_name, cluster_size)
     
     for record_infos in elongates_infos_list:
         record_infos["Nter_events"] = Number_nter_events
         record_infos["Cter_events"] = Number_cter_events
-        record_infos["Meth_after_Nter"] = is_methionine_after_nter(sequence = record_infos["sequence"],
-                                                                   nter_length = record_infos["Nter_elongate_length"])
+        
+
+    print(elongates_infos_list[0].keys())
 
     event_lists = []
     if Nter_events_infos is not None:
