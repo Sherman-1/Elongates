@@ -367,20 +367,18 @@ def compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict):
 def get_elongation_events(elongates_infos_list):
 
     
-
-   
-    Nter_elongates = {record_infos["seq_id"]: record_infos["Nter_elongate_length"] for record_infos in elongates_infos_list}
-    Cter_elongates = {record_infos["seq_id"]: record_infos["Cter_elongate_length"] for record_infos in elongates_infos_list}
-    Nter_events = subgraph_counts(Nter_elongates)
-    Cter_events = subgraph_counts(Cter_elongates)
+    Nter_elongates_length = {record_infos["seq_id"]: record_infos["Nter_elongate_length"] for record_infos in elongates_infos_list}
+    Cter_elongates_length = {record_infos["seq_id"]: record_infos["Cter_elongate_length"] for record_infos in elongates_infos_list}
+    Nter_events = subgraph_counts(Nter_elongates_length)
+    Cter_events = subgraph_counts(Cter_elongates_length)
     
  
-    for d in elongates_infos_list:
-        seq_id = d["seq_id"]
-        d["Nter_sub_clust_ID"] = Nter_events[seq_id] if seq_id in Nter_events.keys() else 0
-        d["Cter_sub_clust_ID"] = Cter_events[seq_id] if seq_id in Cter_events.keys() else 0
-        d["Nter_events"] = max(Nter_events.values()) if bool(Nter_events) else 0
-        d["Cter_events"] = max(Cter_events.values()) if bool(Cter_events) else 0
+    for record_infos in elongates_infos_list:
+        seq_id = record_infos["seq_id"]
+        record_infos["Nter_event_ID"] = Nter_events[seq_id] if seq_id in Nter_events.keys() else 0
+        record_infos["Cter_event_ID"] = Cter_events[seq_id] if seq_id in Cter_events.keys() else 0
+        record_infos["Nter_events"] = max(Nter_events.values()) if bool(Nter_events) else 0
+        record_infos["Cter_events"] = max(Cter_events.values()) if bool(Cter_events) else 0
         
 
     return 0
@@ -403,16 +401,16 @@ def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
     """
     
     max_Nter, max_Cter, elongates_infos_list = compute_max_Nter_Cter(records, cluster_name, cluster_size, regex_dict)
-    Nter_lengths = []
-    Cter_lengths = []
+
+
     for record_infos in elongates_infos_list:
-        record_infos = update_record_info(record_infos, max_Nter, max_Cter)
-        Nter_lengths.append(record_infos["Nter_elongate_length"])
-        Cter_lengths.append(record_infos["Cter_elongate_length"])
+
+        update_record_info(record_infos, max_Nter, max_Cter) 
+        # Nter_lengths.append(record_infos["Nter_elongate_length"])
+        # Cter_lengths.append(record_infos["Cter_elongate_length"])
         record_infos["Meth_after_Nter"] = is_methionine_after_nter(sequence = record_infos["sequence"],
                                                                    nter_length = record_infos["Nter_elongate_length"])
 
 
-     
     get_elongation_events(elongates_infos_list)
     return elongates_infos_list

@@ -2,6 +2,7 @@ import re
 import polars as pl
 from Bio.Blast import NCBIXML
 
+
 # Define regex patterns for the query and subject
 query_pattern = r'(.*?)-(cluster_n\d+)'
 subject_pattern = r'(.*?)-(cluster_n\d+)-.*-(f\d+)-.*'
@@ -15,6 +16,7 @@ parsed_data = []
 for blast_record in blast_records:
     for alignment in blast_record.alignments:
         for hsp in alignment.hsps:
+
             # Extract the seq_id, cluster from the query
             query_matches = re.match(query_pattern, blast_record.query)
             query_seq_id = query_matches.group(1) if query_matches else None
@@ -32,6 +34,7 @@ for blast_record in blast_records:
             # Append the parsed data to the list
             parsed_data.append([query_seq_id, query_cluster, subject_seq_id, subject_relative_frame, same_cluster, hsp.expect])
 
+
 # Convert the parsed data into a polars DataFrame
 df = pl.DataFrame(parsed_data, schema=['Query', 'Cluster', 'Subject', 'Frame', 'Intra', 'E-value'])
 
@@ -39,7 +42,7 @@ df = pl.DataFrame(parsed_data, schema=['Query', 'Cluster', 'Subject', 'Frame', '
 df = df.sort(['E-value'], descending=False)
 
 # Group the data by 'Query Seq ID' and 'Same Cluster', and select the first row of each group
-df = df.groupby(['Query', 'Intra']).apply(lambda df: df.head(1))
+df_best = df.groupby(['Query', 'Intra']).apply(lambda df: df.head(1))
 
 df = df.sort(["Cluster"])
 
@@ -48,5 +51,7 @@ elongates = pl.read_csv("output/0.5_elongates.csv", has_header = True)
 
 columnsToKeep = ['Query', 'Cluster', 'cluster_size', 'Subject', 'Frame', 'Intra', 'E-value', 'Nter_elongate', 'Nter_gaps','Nter_gap_openings', 'Nter_ratio', 'Meth_after_Nter' ]
 df = df.join(elongates, left_on="Query", right_on="seq_id")[columnsToKeep]
+df_best = df_best.join(elongates, left_on="Query", right_on="seq_id")[columnsToKeep]
 
 df.write_csv("output/nter_five.csv")
+df_best.write_csv("output/nter_five_best.csv")

@@ -51,7 +51,7 @@ def analyseClusters(cov, verbose = False, purge = False):
                 elongates = process_multiple_records(records, cluster_name, size, re_dict)
                 
                 write_dicts_to_csv(elongates, f"output/{cov}_elongates.csv")
-                # write_dicts_to_csv(events, f"output/{cov}_events.csv")
+                #write_dicts_to_csv(events, f"output/{cov}_events.csv")
 
 if __name__ == "__main__": 
 
