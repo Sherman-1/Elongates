@@ -3,6 +3,8 @@
 cov=$1
 species=$(yq '.Species_order.Scer_for_bash' env.yaml)
 
+mkdir -p work || exit
+mkdir -p output || exit
 cd work || exit
 
 mkdir -p ${cov}
