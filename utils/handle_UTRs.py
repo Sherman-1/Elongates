@@ -34,7 +34,7 @@ import polars as pl
 import csv
 from utils.files import write_dicts_to_csv
 
-
+__all__ = ["translate_frames", "get_infos_for_UTRs", "get_extended_UTRs"]
 
 def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster):
 
@@ -126,7 +126,7 @@ def get_infos_for_UTRs(threshold, elongates):
 
     return out
 
-def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
+def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
 
     """
     Compute the translations of UTR regions for a given CDS. Each UTR region ( 5' or 3' ) is translated
@@ -204,7 +204,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
             ] # Get the 3' sequence
 
 
-        with open(f"output/{specie}_to_remove.gff", "a") as f:
+        with open(f"output/{cov}/{specie}_to_remove.gff", "a") as f:
                 
             writer = csv.writer(f, delimiter="\t")
             writer.writerow([
@@ -229,7 +229,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
             ].reverse_complement() # Get the 3' sequence
         
 
-        with open(f"output/{specie}_to_remove.gff", "a", newline='') as f:
+        with open(f"output/{cov}/{specie}_to_remove.gff", "a", newline='') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([
 
@@ -244,7 +244,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster):
                                 "FIVE_LENGTH" : FIVE_LENGTH, "THREE_LENGTH" : THREE_LENGTH,
                                 "start" : coordinates[0],
                                 "end" : coordinates[-1]}], 
-                                "output/truncated_utr.csv", mode  = "a")
+                                f"output/{cov}/truncated_utr.csv", mode  = "a")
             
     
 

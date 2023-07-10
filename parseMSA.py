@@ -50,7 +50,7 @@ def analyseClusters(cov, verbose = False, purge = False):
                 remove_temp_file(cov,size, skip_check=False)
                 elongates = process_multiple_records(records, cluster_name, size, re_dict)
                 
-                write_dicts_to_csv(elongates, f"output/{cov}_elongates.csv")
+                write_dicts_to_csv(elongates, f"output/{cov}/{cov}_elongates.csv")
                 #write_dicts_to_csv(events, f"output/{cov}_events.csv")
 
 if __name__ == "__main__": 

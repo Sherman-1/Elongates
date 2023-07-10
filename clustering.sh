@@ -5,6 +5,7 @@ species=$(yq '.Species_order.Scer_for_bash' env.yaml)
 
 mkdir -p work || exit
 mkdir -p output || exit
+mkdir -p output/${cov} || exit
 cd work || exit
 
 mkdir -p ${cov}
@@ -33,7 +34,7 @@ mmseqs result2flat -v 1 DB DB DB_clu_seq clu_seq.fasta
 
 cd .. || exit
 
-python3 ../../flat2multi.py ${cov}
+python3 ../../generate_fastas.py ${cov}
 
 echo -e "\n\n\n-------------------------"
 echo -e "Done for coverage ${cov}"

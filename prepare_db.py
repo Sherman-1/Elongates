@@ -1,16 +1,21 @@
 import polars as pl
 import gff3_parser
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 import yaml
+import argparse
+
+
 from utils import multifasta_to_dict
-from utils.chimeric_sequences import * 
+from utils.handle_UTRs import * 
 THRESHOLD = 15
 
 def prepare_db(cov):
 
     ## Load data
     species = yaml.safe_load(open('env.yaml'))["Species_order"]["Scer"] # Species will be passed as argument in the future
-    elongates = pl.read_csv(f"output/{cov}_elongates.csv", has_header = True)
+    elongates = pl.read_csv(f"output/{cov}/{cov}_elongates.csv", has_header = True)
 
     gff_dict = dict()
     genome_dict = dict()
@@ -30,7 +35,7 @@ def prepare_db(cov):
 
         for cds_infos in infosDict[cluster_id]:
 
-            UTR_dict = get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster_id)
+            UTR_dict = get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster_id, cov)
 
             if UTR_dict == None:
 
@@ -39,8 +44,8 @@ def prepare_db(cov):
             five_prime_db.extend(UTR_dict["5utr"].values() if UTR_dict["5utr"] != None else [])
             three_prime_db.extend(UTR_dict["3utr"].values() if UTR_dict["3utr"] != None else [])
 
-    SeqIO.write(five_prime_db, f"output/five_prime_db.fasta", "fasta")
-    SeqIO.write(three_prime_db, f"output/three_prime_db.fasta", "fasta")
+    SeqIO.write(five_prime_db, f"output/{cov}/five_prime_db.fasta", "fasta")
+    SeqIO.write(three_prime_db, f"output/{cov}/three_prime_db.fasta", "fasta")
 
 
     # Get elongated sequences
@@ -65,11 +70,16 @@ def prepare_db(cov):
         Cter_db.append(SeqRecord(seq = Seq(row["Cter_elongate"].replace("-","")), id = f"{row['seq_id']}-{row['cluster_name']}", description = ""))
         
 
-    SeqIO.write(Nter_db, f"output/Nter_db.fasta", "fasta")
-    SeqIO.write(Cter_db, f"output/Cter_db.fasta", "fasta")
+    SeqIO.write(Nter_db, f"output/{cov}/Nter_db.fasta", "fasta")
+    SeqIO.write(Cter_db, f"output/{cov}/Cter_db.fasta", "fasta")
 
 
         
+if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cov', type=str, help='Coverage')
+    args = parser.parse_args()
 
+    prepare_db(args.cov)
 

@@ -62,7 +62,7 @@ else:
     dic[cluster_size] = 1
 
 # Write size statistics
-with open('../../output/yeasts_stats.csv', 'w', newline='') as f:
+with open(f'../../output/{cov}/yeasts_stats.csv', 'w', newline='') as f:
     writer = csv.writer(f)
     writer.writerow(['Cluster size', 'count'])  # writing headers
     for key, value in dic.items():
