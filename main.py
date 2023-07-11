@@ -9,21 +9,18 @@ from parseBlast import parseBlast
 from prepare_db import prepare_db
 
 
-def main(verbose, purge):
+def main(verbose, purge = False):
 
 
     dataMap = yaml.safe_load(open('env.yaml'))
     for cov in dataMap['Coverages']:
 
         subprocess.call(["bash", "./clustering.sh", cov])
-
         analyseClusters(cov, verbose, purge)
         prepare_db(cov)
-        subprocess.call(["bash", "./blast.sh", cov])
-        parseBlast(cov)
+        #subprocess.call(["bash", "./blast.sh", cov])
+        #parseBlast(cov)
 
-        
-    
 
 if __name__ == "__main__":
 

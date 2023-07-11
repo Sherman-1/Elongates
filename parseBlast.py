@@ -69,7 +69,7 @@ def parse_blast_dataframe(row : tuple) -> tuple:
 
 def parseBlast(cov):
 
-    columns =  ["qseqid", "sseqid", "evalue", "qstart", "qend", "sstart", "send", "qseq", "sseq", "length"]
+    columns =  ["qseqid", "sseqid", "evalue", "qstart", "qend", "sstart", "send", "qseq", "sseq", "length", "blast_gapopen", "blast_gaps"]
     df_nter  = pl.read_csv(f"output/{cov}/nter_five.tsv", separator="\t", has_header = False)
     df_cter  = pl.read_csv(f"output/{cov}/cter_three.tsv", separator="\t", has_header = False)
     df_nter.columns = columns

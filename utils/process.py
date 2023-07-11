@@ -97,14 +97,15 @@ def count_dashes(string,reverse = False):
 
     """
 
-    count = 0
+
     i = 0
     if reverse == True : string = string[::-1]
 
     while i < len(string) and string[i] == "-":
-        count += 1
+
         i += 1
-    return count
+
+    return i
 
 
 def subgraph_counts(lengths_dict, threshold = 15):
@@ -124,11 +125,13 @@ def subgraph_counts(lengths_dict, threshold = 15):
     """
 
     G = nx.Graph()
-
+    if min(lengths_dict.values()) != 0:
+        
+        print("Warning")
     # Add nodes to the graph with custom names and values
     for name, value in lengths_dict.items():
-        if value != 0:  # Only add the node if its value is not 0
-            G.add_node(name, value=value)
+        # if value != 0:  # Only add the node if its value is not 0
+        G.add_node(name, value=value)
 
     # Add edges between nodes based on the absolute difference of their values
     for node1, node2 in itertools.combinations(G.nodes, 2):
@@ -188,8 +191,12 @@ def get_elongates(sequence, max_length, upstream = False):
     nb_aa = 0
 
     if upstream == False:
+
+        # Pass the first characters if they are gaps
         while sequence[len(sequence)-i-1] == "-" and i < max_length:
+
             i+=1
+
 
         while i < max_length:
 

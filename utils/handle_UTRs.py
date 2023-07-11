@@ -157,7 +157,7 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
     coordinates = [] # End and start coordinates of each CDS features
     result_dict = {} # Dictionary to store the results
 
-    
+
 
     if specie == "unknown":
 
