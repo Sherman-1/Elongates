@@ -18,7 +18,8 @@ def main(verbose, purge = False):
         subprocess.call(["bash", "./clustering.sh", cov])
         analyseClusters(cov, verbose, purge)
         prepare_db(cov)
-        #subprocess.call(["bash", "./blast.sh", cov])
+        test(cov)
+        subprocess.call(["bash", "./blast.sh", cov])
         #parseBlast(cov)
 
 
@@ -30,4 +31,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     main(args.verbose, args.purge)
-    test()
+    

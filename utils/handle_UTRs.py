@@ -100,7 +100,7 @@ def get_infos_for_UTRs(threshold, elongates):
 
     elongates_filtered = elongates.filter(
         (pl.col('max_Nter') > threshold) | (pl.col("max_Cter") > threshold)
-        )[["cluster_name", "species", "seq_id", "max_Nter", "max_Cter","Nter_elongate","Cter_elongate"]]
+        )[["cluster_name", "species", "seq_id", "max_Nter", "max_Cter","Nter_elongate","Cter_elongate","is_max_Nter","is_max_Cter"]]
 
     out = {}
     
@@ -110,8 +110,8 @@ def get_infos_for_UTRs(threshold, elongates):
         info = {
             "species": row[1],
             "seq_id": row[2],
-            "five_length": row[3]*3, # We multiply by 3 to get the length in nucleotides
-            "three_length": row[4]*3, # We multiply by 3 to get the length in nucleotides
+            "five_length": row[3]*3 if row[7] == False else 0, # We multiply by 3 to get the length in nucleotides
+            "three_length": row[4]*3 if row[8] == False else 0, # We multiply by 3 to get the length in nucleotides
         }
         
         if cluster_name in out:

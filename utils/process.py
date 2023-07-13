@@ -108,7 +108,7 @@ def count_dashes(string,reverse = False):
     return i
 
 
-def subgraph_counts(lengths_dict, threshold = 15):
+def subgraph_counts(lengths_dict, threshold = 3):
 
     """
     Given a dictionary of node names and values, this function builds a graph where an edge between two nodes exists 
@@ -384,8 +384,8 @@ def get_elongation_events(elongates_infos_list):
         seq_id = record_infos["seq_id"]
         record_infos["Nter_event_ID"] = Nter_events[seq_id] if seq_id in Nter_events.keys() else 0
         record_infos["Cter_event_ID"] = Cter_events[seq_id] if seq_id in Cter_events.keys() else 0
-        record_infos["Nter_events"] = max(Nter_events.values()) if bool(Nter_events) else 0
-        record_infos["Cter_events"] = max(Cter_events.values()) if bool(Cter_events) else 0
+        record_infos["Nter_events"] = max(Nter_events.values()) - 1
+        record_infos["Cter_events"] = max(Cter_events.values()) - 1
         
 
     return 0

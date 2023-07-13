@@ -4,7 +4,7 @@ import polars as pl
 
 __all__ = ["test"]
 
-def test():
+def test(cov):
 
     command = 'find . -type f -name "*.pep" -exec awk \'/^>/ {print $0}\' {} \\; | wc -l'
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -14,7 +14,7 @@ def test():
         # The command failed, the error message is in result.stderr
         print(f"Command failed with error: {result.stderr}")
 
-    data = pl.read_csv("output/yeasts_stats.csv")
+    data = pl.read_csv(f"output/{cov}/yeasts_stats.csv")
     count = 0
     for line in data.iter_rows():
         count += line[0]*line[1]
