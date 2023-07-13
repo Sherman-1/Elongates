@@ -1,0 +1,33 @@
+Cas d'école : 
+
+    query : rna-NM_001178421.4 - subject : rna-XM_033908778.1
+
+
+
+A changer : 
+
+    Enlever condition G.node 0 sur le subgraph count
+
+
+
+
+Fouille des candidats : 
+
+     - NM_001182249.3 : Deletion des 75nucleotides après le codon stop 
+
+     - Cter Subject Skud_6.145 : mauvaise annotation 
+
+     - Cter Subject rna-NM_001184421.2 : Cas mobile genetic element 
+
+     - Cter subject Skud_15.104 : mauvaise annotation
+
+     - Cter subject rna-NM_001184623.1 / 33 / 62 : Cas vu avec Paul, élément bactérien ?
+
+     - Query rna-XM_033909168.1 : Mutation de stop, faible e-value mais quasiment certain de l'évènement
+
+     - 
+
+
+ 
+On a l'air de louper trop de cas en demandant une e-value trop forte, on ne se concentre pas assez sur l'aspect de taille des elongates
+    => Réduire le seuil de distance d'évènement d'élongation
