@@ -108,7 +108,7 @@ def count_dashes(string,reverse = False):
     return i
 
 
-def subgraph_counts(lengths_dict, threshold = 3):
+def subgraph_counts(lengths_dict, threshold = 7):
 
     """
     Given a dictionary of node names and values, this function builds a graph where an edge between two nodes exists 
@@ -313,7 +313,7 @@ def process_record(record, cluster_name, cluster_size, regex_dict):
     # Nter_dashes and Cter_dashes are returned separately to avoid computing them twice 
     return record_info
 
-def update_record_info(record_infos, max_Nter, max_Cter):
+def extract_elongate(record_infos, max_Nter, max_Cter):
 
     """
     Update the information of a record with the elongation lengths.
@@ -379,13 +379,13 @@ def get_elongation_events(elongates_infos_list):
     Nter_events = subgraph_counts(Nter_elongates_length)
     Cter_events = subgraph_counts(Cter_elongates_length)
     
- 
     for record_infos in elongates_infos_list:
         seq_id = record_infos["seq_id"]
         record_infos["Nter_event_ID"] = Nter_events[seq_id] if seq_id in Nter_events.keys() else 0
         record_infos["Cter_event_ID"] = Cter_events[seq_id] if seq_id in Cter_events.keys() else 0
         record_infos["Nter_events"] = max(Nter_events.values()) - 1
         record_infos["Cter_events"] = max(Cter_events.values()) - 1
+
         
 
     return 0
@@ -412,7 +412,7 @@ def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
 
     for record_infos in elongates_infos_list:
 
-        update_record_info(record_infos, max_Nter, max_Cter) 
+        extract_elongate(record_infos, max_Nter, max_Cter) 
         # Nter_lengths.append(record_infos["Nter_elongate_length"])
         # Cter_lengths.append(record_infos["Cter_elongate_length"])
         record_infos["Meth_after_Nter"] = is_methionine_after_nter(sequence = record_infos["sequence"],

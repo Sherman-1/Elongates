@@ -21,7 +21,7 @@ def analyseClusters(cov, verbose = False, purge = False):
 
     cluster_dir = f"work/{cov}/clusters"
 
-    if purge : os.remove(f"output/{cov}_elongates.csv"), os.remove(f"output/{cov}_events.csv")
+    if purge : os.remove(f"output/{cov}/{cov}_elongates.csv")
 
     for entry in os.scandir(cluster_dir):
 

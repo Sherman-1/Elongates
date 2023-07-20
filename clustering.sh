@@ -20,12 +20,12 @@ echo -e "-------------------------\n\n"
 
 cd ../input || exit
 
-mmseqs createdb --dbtype 1 -v 1 $(echo $species | sed 's/\([a-zA-Z_]*\)/\1_CDS.pep/g') ../work/${cov}/tmp/DB
+mmseqs createdb --dbtype 1 -v 1 $(echo $species | sed 's/\([a-zA-Z_]*\)/\1_CDS_corr.pep/g') ../work/${cov}/tmp/DB
 
 cd ../work/${cov}/tmp || exit
 
 echo " Clustering . . . "
-mmseqs cluster --cluster-mode 0 --min-seq-id 0.7 -c ${cov} --cov-mode 0 --remove-tmp-files 1 -v 1 DB clust .
+mmseqs cluster --cluster-mode 1 --min-seq-id 0.7 -c ${cov} --cov-mode 0 --remove-tmp-files 1 -v 1 DB clust .
 
 echo " Parsing files . . . "
 mmseqs createtsv -v 1 DB DB clust clust.tsv

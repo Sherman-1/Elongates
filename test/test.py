@@ -6,7 +6,7 @@ __all__ = ["test"]
 
 def test(cov):
 
-    command = 'find . -type f -name "*.pep" -exec awk \'/^>/ {print $0}\' {} \\; | wc -l'
+    command = 'find . -type f -name "*_corr.pep" -exec awk \'/^>/ {print $0}\' {} \\; | wc -l'
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
     # Check if the command was successful
@@ -26,3 +26,14 @@ def test(cov):
     else:
         print("Test failed")
         return 1
+    
+
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cov', type=str, help='Coverage')
+    args = parser.parse_args()
+
+    test(args.cov)
