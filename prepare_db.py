@@ -15,7 +15,7 @@ def prepare_db(cov):
 
     ## Load data
     species = yaml.safe_load(open('env.yaml'))["Species_order"]["Scer"] # Species will be passed as argument in the future
-    elongates = pl.read_csv(f"output/{cov}/{cov}_elongates.csv", has_header = True)
+    elongates = pl.read_csv(f"output/{cov}/{cov}_elongates.csv", has_header = True, infer_schema_length = 5000)
 
     gff_dict = dict()
     genome_dict = dict()
@@ -27,25 +27,32 @@ def prepare_db(cov):
 
     infosDict = get_infos_for_UTRs(threshold=THRESHOLD, elongates = elongates)
 
-    five_prime_db = list()
-    three_prime_db = list()
+    trans_five_prime_db = list()
+    trans_three_prime_db = list()
+    raw_five_prime_db = list()
+    raw_three_prime_db = list()
+    
 
 
     for cluster_id in infosDict.keys():
 
-        for cds_infos in infosDict[cluster_id]:
+        for cds_infos in infosDict[cluster_id]: # list of dicts
 
-            UTR_dict = get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster_id, cov)
+            translated_UTRs, raw_UTRs = get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster_id, cov)
 
-            if UTR_dict == None:
+            if (translated_UTRs == None) or (raw_UTRs == None):
 
                 continue
 
-            five_prime_db.extend(UTR_dict["5utr"].values() if UTR_dict["5utr"] != None else [])
-            three_prime_db.extend(UTR_dict["3utr"].values() if UTR_dict["3utr"] != None else [])
+            trans_five_prime_db.extend(translated_UTRs["5utr"].values() if translated_UTRs["5utr"] != None else [])
+            trans_three_prime_db.extend(translated_UTRs["3utr"].values() if translated_UTRs["3utr"] != None else [])
+            #raw_five_prime_db.extend(raw_UTRs["5utr"])
+            #raw_three_prime_db.extend(raw_UTRs["3utr"])
 
-    SeqIO.write(five_prime_db, f"output/{cov}/five_prime_db.fasta", "fasta")
-    SeqIO.write(three_prime_db, f"output/{cov}/three_prime_db.fasta", "fasta")
+    SeqIO.write(trans_five_prime_db, f"output/{cov}/five_prime_db.fasta", "fasta")
+    SeqIO.write(trans_three_prime_db, f"output/{cov}/three_prime_db.fasta", "fasta")
+    #SeqIO.write(raw_five_prime_db, f"output/{cov}/five_prime_db_raw.fasta", "fasta")
+    #SeqIO.write(raw_three_prime_db, f"output/{cov}/three_prime_db_raw.fasta", "fasta")
 
 
     # Get elongated sequences

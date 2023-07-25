@@ -83,7 +83,7 @@ def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster):
 def get_infos_for_UTRs(threshold, elongates):
 
     """
-    Retrieves information for chimeric sequences from the filtered dataset. Input clusters correspond 
+    Retrieves information for UTRs extraction from the filtered dataset. Input clusters correspond 
     to clusters where max Nter or Cter elongation is greater than fixed threshold defined at the beginning
     of the pipeline. 
 
@@ -98,12 +98,14 @@ def get_infos_for_UTRs(threshold, elongates):
 
     """ 
 
+    # Filter elongates to get only the ones above threshold ( 15 by default )
     elongates_filtered = elongates.filter(
         (pl.col('max_Nter') > threshold) | (pl.col("max_Cter") > threshold)
         )[["cluster_name", "species", "seq_id", "max_Nter", "max_Cter","Nter_elongate","Cter_elongate","is_max_Nter","is_max_Cter"]]
 
     out = {}
     
+    # A bit dirty but it works for now
     def add_to_dict(row):
         
         cluster_name = row[0]
@@ -111,7 +113,9 @@ def get_infos_for_UTRs(threshold, elongates):
             "species": row[1],
             "seq_id": row[2],
             "five_length": row[3]*3 if row[7] == False else 0, # We multiply by 3 to get the length in nucleotides
-            "three_length": row[4]*3 if row[8] == False else 0, # We multiply by 3 to get the length in nucleotides
+            "three_length": row[4]*3 if row[8] == False else 0, # Longest elongate is not used for UTR extraction
+            "is_max_Nter": row[7],
+            "is_max_Cter": row[8], 
         }
         
         if cluster_name in out:
@@ -152,10 +156,13 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
     # Initilize
     specie = cds_infos["species"]
     seq_id = cds_infos["seq_id"]
-    FIVE_LENGTH = cds_infos["five_length"]*2
-    THREE_LENGTH = cds_infos["three_length"]*2
+    FIVE_LENGTH = cds_infos["five_length"]*2 # Mult. by 2 to ensure that signal is not lost because of some 
+    THREE_LENGTH = cds_infos["three_length"]*2 # dna insertion during evolution : we look further than just elongate length
+    is_max_Nter = cds_infos["is_max_Nter"]
+    is_max_Cter = cds_infos["is_max_Cter"]
     coordinates = [] # End and start coordinates of each CDS features
-    result_dict = {} # Dictionary to store the results
+    UTRs = {} # Dictionary to store the raw UTRs
+    translated_UTRs = {} # Dictionary to store the translated UTRs
 
 
 
@@ -247,19 +254,21 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
                                 f"output/{cov}/truncated_utr.csv", mode  = "a")
             
     
+    UTRs["5utr"] = SeqRecord(seq = five_prime, id = f"{seq_id}-{cluster}-five_prime", description = "")
+    UTRs["3utr"] = three_prime
 
 
-    # Translate the sequences for each frame
-    result_dict["5utr"] = translate_frames(five_prime, specie = specie, 
+    # Translate the UTRs in each frame
+    translated_UTRs["5utr"] = translate_frames(five_prime, specie = specie, 
                                            seq_id = seq_id, length = len(five_prime), 
                                            utr = "5utr", cluster = cluster)
-    result_dict["3utr"] = translate_frames(three_prime, specie = specie, 
+    translated_UTRs["3utr"] = translate_frames(three_prime, specie = specie, 
                                            seq_id = seq_id, length= len(three_prime), 
                                            utr = "3utr", cluster = cluster)
 
 
     
-    return result_dict
+    return translated_UTRs, UTRs
 
 
 

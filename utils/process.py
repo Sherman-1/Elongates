@@ -63,10 +63,14 @@ def is_methionine_after_nter(sequence: str, nter_length: int) -> int:
     bool: True if the first amino acid following the elongation is Methionine, False otherwise.
     """
     try:
-        next_aa_after_elongation = sequence[nter_length]
+        next_aa_after_elongation = sequence.replace("-","")[nter_length]
+        next_aa_after_elongation_plus_one = sequence.replace("-","")[nter_length+1]
+        next_aa_after_elongation_minus_one = sequence.replace("-","")[nter_length-1]
     except IndexError:
         return False  # nter_length is longer than the sequence itself
-    return int(next_aa_after_elongation.upper() == 'M')
+    
+    # Check if wether of the first, next, or previous amino acid is a Methionine
+    return int(next_aa_after_elongation == "M" or next_aa_after_elongation_plus_one == "M" or next_aa_after_elongation_minus_one == "M")
 
 def count_dashes(string,reverse = False):
 
