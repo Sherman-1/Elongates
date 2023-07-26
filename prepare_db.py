@@ -31,6 +31,9 @@ def prepare_db(cov):
     trans_three_prime_db = list()
     raw_five_prime_db = list()
     raw_three_prime_db = list()
+    untranslated_nter = list()
+    untranslated_cter = list()
+    
     
 
 
@@ -38,22 +41,34 @@ def prepare_db(cov):
 
         for cds_infos in infosDict[cluster_id]: # list of dicts
 
-            translated_UTRs, raw_UTRs = get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster_id, cov)
+            translated_UTRs, raw_UTRs, untranslated_elongates = get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster_id, cov)
 
-            if (translated_UTRs == None) or (raw_UTRs == None):
+            if translated_UTRs["5utr"]and raw_UTRs["5utr"]:
 
-                continue
+                trans_five_prime_db.extend(translated_UTRs["5utr"].values())
+                raw_five_prime_db.append(raw_UTRs["5utr"])
 
-            trans_five_prime_db.extend(translated_UTRs["5utr"].values() if translated_UTRs["5utr"] != None else [])
-            trans_three_prime_db.extend(translated_UTRs["3utr"].values() if translated_UTRs["3utr"] != None else [])
-            #raw_five_prime_db.extend(raw_UTRs["5utr"])
-            #raw_three_prime_db.extend(raw_UTRs["3utr"])
+            if translated_UTRs["3utr"] and raw_UTRs["3utr"]:
 
+                trans_three_prime_db.extend(translated_UTRs["3utr"].values())
+                raw_three_prime_db.append(raw_UTRs["3utr"])
+
+            if untranslated_elongates["Nter"]:
+
+                untranslated_nter.append(untranslated_elongates["Nter"])
+
+            if untranslated_elongates["Cter"]:
+
+                untranslated_cter.append(untranslated_elongates["Cter"])
+    
+   
     SeqIO.write(trans_five_prime_db, f"output/{cov}/five_prime_db.fasta", "fasta")
     SeqIO.write(trans_three_prime_db, f"output/{cov}/three_prime_db.fasta", "fasta")
-    #SeqIO.write(raw_five_prime_db, f"output/{cov}/five_prime_db_raw.fasta", "fasta")
-    #SeqIO.write(raw_three_prime_db, f"output/{cov}/three_prime_db_raw.fasta", "fasta")
-
+    SeqIO.write(raw_five_prime_db, f"output/{cov}/five_prime_db_untrans.fasta", "fasta")
+    SeqIO.write(raw_three_prime_db, f"output/{cov}/three_prime_db_untrans.fasta", "fasta")
+    SeqIO.write(untranslated_nter, f"output/{cov}/Nter_untrans.fasta", "fasta")
+    SeqIO.write(untranslated_cter, f"output/{cov}/Cter_untrans.fasta", "fasta")
+    
 
     # Get elongated sequences
     Nter_db = list()

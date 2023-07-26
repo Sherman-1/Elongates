@@ -98,10 +98,12 @@ def get_infos_for_UTRs(threshold, elongates):
 
     """ 
 
-    # Filter elongates to get only the ones above threshold ( 15 by default )
+    # Filter clusters to get only the ones above threshold ( 15 by default )
     elongates_filtered = elongates.filter(
-        (pl.col('max_Nter') > threshold) | (pl.col("max_Cter") > threshold)
-        )[["cluster_name", "species", "seq_id", "max_Nter", "max_Cter","Nter_elongate","Cter_elongate","is_max_Nter","is_max_Cter"]]
+        (pl.col('max_Nter') >= threshold) | (pl.col("max_Cter") >= threshold)
+        )[["cluster_name", "species", "seq_id", "max_Nter", 
+           "max_Cter","Nter_elongate","Cter_elongate",
+           "is_max_Nter","is_max_Cter","Nter_nb_aa","Cter_nb_aa",]]
 
     out = {}
     
@@ -112,10 +114,12 @@ def get_infos_for_UTRs(threshold, elongates):
         info = {
             "species": row[1],
             "seq_id": row[2],
-            "five_length": row[3]*3 if row[7] == False else 0, # We multiply by 3 to get the length in nucleotides
-            "three_length": row[4]*3 if row[8] == False else 0, # Longest elongate is not used for UTR extraction
+            "five_length": row[3]*3, # We multiply by 3 to get the length in nucleotides
+            "three_length": row[4]*3, # Longest elongate is not used for UTR extraction
             "is_max_Nter": row[7],
-            "is_max_Cter": row[8], 
+            "is_max_Cter": row[8],
+            "Nter_nb_aa": row[9],
+            "Cter_nb_aa": row[10] 
         }
         
         if cluster_name in out:
@@ -156,13 +160,23 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
     # Initilize
     specie = cds_infos["species"]
     seq_id = cds_infos["seq_id"]
-    FIVE_LENGTH = cds_infos["five_length"]*2 # Mult. by 2 to ensure that signal is not lost because of some 
-    THREE_LENGTH = cds_infos["three_length"]*2 # dna insertion during evolution : we look further than just elongate length
     is_max_Nter = cds_infos["is_max_Nter"]
     is_max_Cter = cds_infos["is_max_Cter"]
+
+    if is_max_Nter:
+        FIVE_LENGTH = cds_infos["five_length"] 
+    else:
+        FIVE_LENGTH = cds_infos["five_length"]*2
+
+    if is_max_Cter:
+        THREE_LENGTH = cds_infos["three_length"]
+    else:
+        THREE_LENGTH = cds_infos["three_length"]*2
+    
     coordinates = [] # End and start coordinates of each CDS features
-    UTRs = {} # Dictionary to store the raw UTRs
+    raw_UTRs = {} # Dictionary to store the raw UTRs
     translated_UTRs = {} # Dictionary to store the translated UTRs
+    untranslated_elongates = {}
 
 
 
@@ -191,25 +205,43 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
 
     # coordinates[0] = (start, end) of the first exon
     # coordinates[-1] = (start, end) of the last exon
-    
 
     if strand == "+":
 
-        start_5 = coordinates[0][0]-FIVE_LENGTH if coordinates[0][0]-FIVE_LENGTH >= 0 else 0 # Get the start position of the 5' UTR
-        end_3 = coordinates[-1][1]+1+THREE_LENGTH if coordinates[-1][1]+1+THREE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the end position of the 3' UTR
-        
-        five_prime = genome_dict[specie][strand_id]["seq"][
+        if not is_max_Nter:
 
-            start_5:coordinates[0][0]
+            start_5 = coordinates[0][0]-FIVE_LENGTH if coordinates[0][0]-FIVE_LENGTH >= 0 else 0 # Get the start position of the 5' UTR
+            
+            five_prime = genome_dict[specie][strand_id]["seq"][
 
-            ] # Get the 5' sequence
+                start_5:coordinates[0][0]
+
+            ] # Get the 5'UTR corresponding to the non-coding region of the elongate in the cluster
+
+        else:
+
         
+            five_prime = genome_dict[specie][strand_id]["seq"][
+
+                coordinates[0][0]:coordinates[0][0]+FIVE_LENGTH
+
+            ] # Get the 5' sequence corresponding to the actual, detected, elongate 
+
+        
+        if not is_max_Cter:
+
+            end_3 = coordinates[-1][1]+1+THREE_LENGTH if coordinates[-1][1]+1+THREE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the end position of the 3' UTR
             # +1 for -1,1 because GFF points to the last nucleotide of the stop codon
 
-        three_prime = genome_dict[specie][strand_id]["seq"][
-            coordinates[-1][1]+1:end_3
-            ] # Get the 3' sequence
+            three_prime = genome_dict[specie][strand_id]["seq"][
+                coordinates[-1][1]+1:end_3
+                ] # Get the 3' sequence
 
+        else:
+
+            three_prime = genome_dict[specie][strand_id]["seq"][
+                coordinates[-1][1]-THREE_LENGTH:coordinates[-1][1]+1
+            ]
 
         with open(f"output/{cov}/{specie}_to_remove.gff", "a") as f:
                 
@@ -224,16 +256,33 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
     # Reverse complement if the strand is negative, don't forget to reverse the coordinates
     if strand == "-":
 
-        end_5 = coordinates[-1][1]+1+FIVE_LENGTH if coordinates[-1][1]+1+FIVE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the start position of the 5' UTR
-        start_3 = coordinates[0][0]-THREE_LENGTH if coordinates[0][0]-THREE_LENGTH >= 0 else 0 # Get the end position of the 3' UTR
+        if not is_max_Nter:
 
-        five_prime = genome_dict[specie][strand_id]["seq"][
-            coordinates[-1][1]+1:end_5
+            end_5 = coordinates[-1][1]+1+FIVE_LENGTH if coordinates[-1][1]+1+FIVE_LENGTH <= genome_dict[specie][strand_id]["len"] else genome_dict[specie][strand_id]["len"] # Get the start position of the 5' UTR
+
+            five_prime = genome_dict[specie][strand_id]["seq"][
+                coordinates[-1][1]+1:end_5
             ].reverse_complement() # Get the 5' sequence
         
-        three_prime = genome_dict[specie][strand_id]["seq"][
-            start_3:coordinates[0][0]
+        else:
+
+            five_prime = genome_dict[specie][strand_id]["seq"][
+                coordinates[-1][1]-FIVE_LENGTH:coordinates[-1][1]
+            ].reverse_complement()
+
+        if not is_max_Cter:
+        
+            start_3 = coordinates[0][0]-THREE_LENGTH if coordinates[0][0]-THREE_LENGTH >= 0 else 0 # Get the end position of the 3' UTR
+
+            three_prime = genome_dict[specie][strand_id]["seq"][
+                start_3:coordinates[0][0]
             ].reverse_complement() # Get the 3' sequence
+            
+        else:
+
+            three_prime = genome_dict[specie][strand_id]["seq"][
+                coordinates[0][0]:coordinates[0][0]+THREE_LENGTH+1
+            ].reverse_complement()
         
 
         with open(f"output/{cov}/{specie}_to_remove.gff", "a", newline='') as f:
@@ -252,23 +301,44 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
                                 "start" : coordinates[0],
                                 "end" : coordinates[-1]}], 
                                 f"output/{cov}/truncated_utr.csv", mode  = "a")
-            
-    
-    UTRs["5utr"] = SeqRecord(seq = five_prime, id = f"{seq_id}-{cluster}-five_prime", description = "")
-    UTRs["3utr"] = three_prime
 
 
-    # Translate the UTRs in each frame
-    translated_UTRs["5utr"] = translate_frames(five_prime, specie = specie, 
-                                           seq_id = seq_id, length = len(five_prime), 
-                                           utr = "5utr", cluster = cluster)
-    translated_UTRs["3utr"] = translate_frames(three_prime, specie = specie, 
+    if not is_max_Nter:    
+        raw_UTRs["5utr"] = SeqRecord(seq = Seq(five_prime), id = f"{seq_id}-{cluster}", description = "")
+        translated_UTRs["5utr"] = translate_frames(five_prime, specie = specie, 
+                                            seq_id = seq_id, length = len(five_prime), 
+                                            utr = "5utr", cluster = cluster)
+        untranslated_elongates["Nter"] = None
+        
+    else:
+        
+        raw_UTRs["5utr"] = None
+        translated_UTRs["5utr"] = None
+
+        if five_prime != "":
+            untranslated_elongates["Nter"] = SeqRecord(seq = Seq(five_prime), id = f"{seq_id}-{cluster}", description = "")
+        else:
+            untranslated_elongates["Nter"] = None
+
+    if not is_max_Cter:
+        raw_UTRs["3utr"] = SeqRecord(seq = Seq(three_prime), id = f"{seq_id}-{cluster}", description = "")
+        translated_UTRs["3utr"] = translate_frames(three_prime, specie = specie, 
                                            seq_id = seq_id, length= len(three_prime), 
                                            utr = "3utr", cluster = cluster)
+        untranslated_elongates["Cter"] = None
+        
+    else:
 
-
+        raw_UTRs["3utr"] = None
+        translated_UTRs["3utr"] = None
+        if three_prime != "":
+            untranslated_elongates["Cter"] = SeqRecord(seq = Seq(three_prime), id = f"{seq_id}-{cluster}", description = "")
+        else:
+            untranslated_elongates["Cter"] = None
     
-    return translated_UTRs, UTRs
+        
+    
+    return translated_UTRs, raw_UTRs, untranslated_elongates
 
 
 
