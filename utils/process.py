@@ -131,7 +131,8 @@ def subgraph_counts(lengths_dict, threshold = 7):
     G = nx.Graph()
     if min(lengths_dict.values()) != 0:
         
-        print("Warning")
+        return ValueError("Cluster without minimum elongate length 0")
+    
     # Add nodes to the graph with custom names and values
     for name, value in lengths_dict.items():
         # if value != 0:  # Only add the node if its value is not 0
@@ -147,7 +148,7 @@ def subgraph_counts(lengths_dict, threshold = 7):
 
     # Create a list of subgraphs, where each subgraph is a connected component of the graph G then sort them by the minimum value of their nodes
     S = sorted([G.subgraph(c).copy() for c in nx.connected_components(G)], key=lambda x: min(data['value'] for node, data in x.nodes(data=True)))
-    subgraph_id = 1
+    subgraph_id = 0
     res_dict = dict()
     for sub in S:
 
@@ -382,13 +383,17 @@ def get_elongation_events(elongates_infos_list):
     Cter_elongates_length = {record_infos["seq_id"]: record_infos["Cter_elongate_length"] for record_infos in elongates_infos_list}
     Nter_events = subgraph_counts(Nter_elongates_length)
     Cter_events = subgraph_counts(Cter_elongates_length)
+
+    if min(Nter_events.values()) != 0:
+
+        raise ValueError("Cluster without min event ID 0")
     
     for record_infos in elongates_infos_list:
         seq_id = record_infos["seq_id"]
         record_infos["Nter_event_ID"] = Nter_events[seq_id] if seq_id in Nter_events.keys() else 0
         record_infos["Cter_event_ID"] = Cter_events[seq_id] if seq_id in Cter_events.keys() else 0
-        record_infos["Nter_events"] = max(Nter_events.values()) - 1
-        record_infos["Cter_events"] = max(Cter_events.values()) - 1
+        record_infos["Nter_events"] = max(Nter_events.values())
+        record_infos["Cter_events"] = max(Cter_events.values())
 
         
 

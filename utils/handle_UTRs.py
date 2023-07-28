@@ -178,8 +178,6 @@ def get_extended_UTRs(cds_infos, gff_dict, genome_dict, cluster, cov):
     translated_UTRs = {} # Dictionary to store the translated UTRs
     untranslated_elongates = {}
 
-
-
     if specie == "unknown":
 
         return None

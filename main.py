@@ -5,7 +5,7 @@ import argparse
 
 from test import test
 from parseMSA import analyseClusters
-from parseBlast import parseBlast
+# from parseBlast import parseBlast
 from prepare_db import prepare_db
 
 
@@ -19,7 +19,7 @@ def main(verbose, purge = False):
         analyseClusters(cov, verbose, purge)
         prepare_db(cov)
         test(cov)
-        subprocess.call(["bash", "./blast.sh", cov])
+        #subprocess.call(["bash", "./blast.sh", cov])
         #parseBlast(cov)
 
 
