@@ -36,7 +36,7 @@ from utils.files import write_dicts_to_csv
 
 __all__ = ["translate_frames", "get_infos_for_UTRs", "get_extended_UTRs"]
 
-def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster):
+def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster) -> dict():
 
     """
     Translates a given DNA sequence into protein sequences for the three different reading frames. Frame 1 is
