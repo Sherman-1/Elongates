@@ -5,10 +5,10 @@ import csv
 import os
 
 # Directory containing your cluster directories
-base_dir = '/home/simon.herman/Bureau/Gits/Elongates/work/0.5/clusters'
+base_dir = '/home/sherman/Bureau/Gits/Elongates/work/0.5/clusters'
 
 # Load your species regex from the yaml file
-with open('/home/simon.herman/Bureau/Gits/Elongates/env.yaml', 'r') as f:
+with open('/home/sherman/Bureau/Gits/Elongates/env.yaml', 'r') as f:
     yaml_data = yaml.safe_load(f)
     species_dict = {k: v for d in yaml_data['Regex'].values() for k, v in d.items()}
     species_order = yaml_data['Species_order']['Scer']

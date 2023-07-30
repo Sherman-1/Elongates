@@ -1,7 +1,7 @@
 from Bio import SeqIO
 import yaml
 
-with open('/home/simon.herman/Bureau/Gits/Elongates/env.yaml', 'r') as f:
+with open('/home/sherman/Bureau/Gits/Elongates/env.yaml', 'r') as f:
     yaml_data = yaml.safe_load(f)
     species = yaml_data['Species_order']['Scer']
 
