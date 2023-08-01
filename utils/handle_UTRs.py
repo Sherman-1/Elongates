@@ -59,9 +59,6 @@ def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster) -> dict
     result = dict()
     dna_seq = dna_sequence if isinstance(dna_sequence, Seq) else Seq(dna_sequence)
 
-    if length < 45:
-
-        return None
 
     # Translate DNA sequence into protein for 3 different reading frames
     # We divide length by 3 because the length of the UTR is given in nucleotides
