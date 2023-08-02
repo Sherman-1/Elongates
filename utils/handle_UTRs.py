@@ -65,15 +65,15 @@ def translate_frames(dna_sequence, specie, seq_id, length, utr, cluster) -> dict
 
     result["frame_0"] = SeqRecord(seq = Seq(dna_seq[:length - length % 3].translate()), 
                                 id = f"{seq_id}-{cluster}-{utr}-f0-{int(length/3)}", 
-                                description = specie)
+                                description = "") # last modif : tried to remove description = specie
 
     result["frame_1"] = SeqRecord(seq = Seq(dna_seq[1:length - (length - 1) % 3].translate()), 
                                 id = f"{seq_id}-{cluster}-{utr}-f1-{int(length/3)}", 
-                                description = specie)
+                                description = "")
 
     result["frame_2"] = SeqRecord(seq = Seq(dna_seq[2:length - (length - 2) % 3].translate()), 
                                 id = f"{seq_id}-{cluster}-{utr}-f2-{int(length/3)}", 
-                                description = specie)
+                                description = "")
 
     return result
 
