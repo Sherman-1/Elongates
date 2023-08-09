@@ -429,4 +429,10 @@ def process_multiple_records(records, cluster_name, cluster_size, regex_dict):
 
 
     get_elongation_events(elongates_infos_list)
+
+    unique_species_count = len(set(record['species'] for record in elongates_infos_list))
+
+    # Add the unique_species key to each dictionary
+    for record in elongates_infos_list:
+        record['unique_species'] = unique_species_count
     return elongates_infos_list

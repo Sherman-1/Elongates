@@ -19,7 +19,7 @@ def main(verbose, purge = False):
         analyseClusters(cov, verbose, purge)
         prepare_db(cov)
         test(cov)
-        #subprocess.call(["bash", "./blast.sh", cov])
+        subprocess.call(["bash", "./blast.sh", cov])
         #parseBlast(cov)
 
 
