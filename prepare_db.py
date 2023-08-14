@@ -1,4 +1,5 @@
 import polars as pl
+import pandas as pd
 import gff3_parser
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -15,7 +16,7 @@ def prepare_db(cov):
 
     ## Load data
     species = yaml.safe_load(open('env.yaml'))["Species_order"]["Scer"] # Species will be passed as argument in the future
-    elongates = pl.read_csv(f"output/{cov}/{cov}_elongates.csv", has_header = True, infer_schema_length = 5000)
+    elongates = pl.from_pandas(pd.read_csv(f"output/{cov}/{cov}_elongates.csv", low_memory = False))
 
     gff_dict = dict()
     genome_dict = dict()

@@ -4,7 +4,7 @@ import gff3_parser
 from utils.files import multifasta_to_dict
 import polars as pl
 
-with open('/home/simon.herman/Bureau/Gits/Elongates/env.yaml', 'r') as f:
+with open('/home/sherman/Bureau/Gits/Elongates/env.yaml', 'r') as f:
     yaml_data = yaml.safe_load(f)
     species = yaml_data['Species_order']['Scer']
 
@@ -18,6 +18,7 @@ for specie in species:
 
 def is_good(protein_seq):
 
+    # No stop codon in the middle of the sequence and protein starts with a methionine
     bool_ = (not ('.' in protein_seq) or ('*' in protein_seq) or ('Z' in protein_seq)) & (protein_seq[0] == "M")
     return bool_
 
@@ -25,7 +26,6 @@ def is_good(protein_seq):
 no_internal_stops = dict()
 for specie in species:
     good_sequences = set()
-    i = 0
     with open(f'input/{specie}_CDS.pep', 'r') as fasta_file:
         for record in SeqIO.parse(fasta_file, 'fasta'):
             if is_good(record.seq):
@@ -37,7 +37,11 @@ for specie in species:
 
 bad = dict()
 # Only those species are poorly annotated 
-for specie in ["Skud","Smik","Sbay"]:
+
+# Small script checks wether te stop codon is legit
+# Do it that way because gffread doesn't include last codon in the CDS sequence
+# Not used for now since stop codon bad annotation is not that simple to deal with
+for specie in species:
 
     no_stop_end = set()
     for sequence in gff_dict[specie].filter(pl.col("Type") == "CDS").iter_rows(named = True):
@@ -49,23 +53,22 @@ for specie in ["Skud","Smik","Sbay"]:
 
         if sense == "+":
 
-            if genome_dict[specie][contig]["seq"][stop-3:stop] != "TGA" or genome_dict[specie][contig]["seq"][stop-3:stop] != "TAA" or genome_dict[specie][contig]["seq"][stop-3:stop] != "TAG":
-
+            if genome_dict[specie][contig]["seq"][stop-3:stop] not in ["TGA", "TAA", "TAG"]:
                 no_stop_end.add(cds_name)
 
         elif sense == "-":
 
-            if genome_dict[specie][contig]["seq"][stop:stop+3][::-1] != "TGA" or genome_dict[specie][contig]["seq"][stop:stop+3][::-1] != "TAA" or genome_dict[specie][contig]["seq"][stop:stop+3][::-1] != "TAG":
+            if genome_dict[specie][contig]["seq"][stop:stop+3][::-1] not in ["TGA", "TAA", "TAG"]:
                 no_stop_end.add(cds_name)
 
 
-    bad[specie] = good_sequences
+    bad[specie] = no_stop_end
 
 
-for specie in ["Skud","Smik","Sbay"]:
+for specie in species:
 
 
-    no_internal_stops[specie] == no_internal_stops[specie] - bad[specie]
+    no_internal_stops[specie] = no_internal_stops[specie] #- bad[specie]
 
 
     with open(f'input/{specie}_CDS.pep', 'r') as fasta_file:
