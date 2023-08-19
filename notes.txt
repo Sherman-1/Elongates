@@ -1,6 +1,6 @@
 Cas d'école : 
 
-    query : rna-NM_001178421.4 - subject : rna-XM_033908778.1 frameshift
+    query : rna-NM_001178421.4 - subject : rna-XM_033908778.1 frameshift dans le tableau 
     
     query : rna-NM_001181842.1 - subject 
 
@@ -129,7 +129,7 @@ Nter : Scer/Spar eval < 0.5 length < 60
     
     - rna-NM_001181842.1 : Cas d'école
     
-    - rna-NM_001182960.1 : Cas d'école
+    - rna-NM_001182960.1 : Cas d'école dans le tableau
     
     - rna-XM_033911993.1 / rna-NM_001181997.1 : Perte
 
