@@ -1,6 +1,6 @@
 This repository holds the development code of my PhD Thesis about the role of non-coding genome in the evolution of proteins.  <br />
 It is not yet intended to be reproducible in that the project is not completed.  <br />
-However, to whom should want to explore the code, here are the dependencies that you wll need to run the software : <br />
+However, to whom should want to explore the code, here are the dependencies that you will need to install in order to run the software : <br />
 
 python 3.10.12 <br />
   Bio==1.5.9 <br />
