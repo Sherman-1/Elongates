@@ -1,0 +1,194 @@
+Cas d'école : 
+
+    query : rna-NM_001178421.4 - subject : rna-XM_033908778.1 frameshift dans le tableau 
+    
+    query : rna-NM_001181842.1 - subject 
+
+
+
+
+A changer : 
+
+    Enlever condition G.node 0 sur le subgraph count
+
+
+
+
+Fouille des candidats : 
+
+     - NM_001182249.3 : Deletion des 75nucleotides après le codon stop 
+
+     - Cter Subject Skud_6.145 : mauvaise annotation 
+
+     - Cter Subject rna-NM_001184421.2 : Cas mobile genetic element 
+
+     - Cter subject Skud_15.104 : mauvaise annotation
+
+     - Cter subject rna-NM_001184623.1 / 33 / 62 : Cas vu avec Paul, élément bactérien ?
+
+     - Nter query : rna-XM_033913447.1 : Très probablement une perte ( Methionine qui dégage ), les autres séquences ont toutes l'elongate
+
+     - Nter query :  rna-NM_001183233.3 : Comprends pas très bien, elongate matche qu'à partir de position 4 donc omet la Met 
+
+     - Nter 
+
+
+
+
+Nter : Scer/Spar eval < 0.5 length < 60 
+
+    #### 1e-20
+
+    - rna-XM_033912875.1 : Blast NR match ++ evalue : 2e-30 PAS BON
+
+    - NM_001182038 : Courte elongation 7AA spécifique Scer dans un cluster de 5, vue en RiboSeq PAS BON
+                     NR : NR +
+                     
+    - rna-XM_033909919.1 : NR +
+    
+    - rna-NM_001181048.1 NR + 
+    
+    - rna-NM_001178818.1 NR + 
+    
+    - rna-XM_033909924.1 / rna-NM_001178894.1 NR +
+    
+    - rna-NM_001181980.1 NR + 
+    
+    - rna-XM_033909924.1 / rna-NM_001178894.1 NR+
+    
+    - rna-NM_001180167.1 : Cas intéressant, elongate que chez XM/NM et clignote dans les autres espèces
+    			     de la NR
+
+    - rna-NM_001179231.1 Mauvaise annotation Kud à cause d'un stop dans la séquence 
+    
+    #### 1e-10
+    
+    - rna-NM_001180838.1  NR+, avait clairement l'air d'une perte 
+    
+    - rna-XM_033909769.1 NR- ( sauf chez Scer et UNE espèce lointaine ) Belle topologie d'élongation,
+    			tous les feux au vert 
+
+    		> Sarb_13G05150.1-cluster_n2859-5utr-f0-70 Sarb
+		Length=70
+
+		 Score = 48.5 bits (114),  Expect = 4e-11, Method: Compositional matrix adjust.
+		 Identities = 23/25 (92%), Positives = 24/25 (96%), Gaps = 0/25 (0%)
+
+		Query  11  QEKVRTKTVKRASKALIERYYPKLT  35
+			   Q +VRTKTVKRASKALIERYYPKLT
+		Sbjct  46  QGRVRTKTVKRASKALIERYYPKLT  70
+		
+		
+    -  rna-XM_033911666.1 NR +/- : Jeune gène, tricote beaucoup. 
+
+
+    - rna-XM_033911639.1 NR bizarre, jeune gène. Cter interessant. Mais topologie de perte +++
+    
+    - rna-NM_001184523.1 NR Bizarre, Elongate retrouvée que chez des espèces très loin de Scer
+    			Probable frameshit 
+
+    - rna-NM_001178213.1 : Cluster 31, n-1 elongates => Perte. NR+
+    
+    - rna-NM_001184534.1 : NR+, mauvaise annotation des GFF
+
+
+    ##### 1e-5
+    
+    - rna-NM_001182732.1 Il manque Skud car mal annotée ( stops ) et donc pas dans le cluster. 
+    			  NR++
+
+    - rna-NM_001181126.1 : Pas de match outside Saccharomyces DUAL 
+    
+    - rna-XM_033911051.1 : Topologie de perte, Mais NR semble indiquer que c'est elongation après
+    			    spéciation de arboricola  
+
+    - rna-XM_033909659.1 : Topologie parfaite, uniquement elongate XM/NM. NR- sauf une espèce 
+    			    trèèès lointaine où l'elongate recouvre de façon très crade une protéine
+    			    de 1100 résidus en son milieu, ancrée par la partie non-elongate de Scer.
+    			    
+    - rna-XM_033909010.1 : Topologie mamama al dente, Le meilleur NR que j'ai jamais vu la vérité.
+    			    Etrange cependant : Query XM, subject NM pourtant on observe des reads dans 
+    			    la zone non-codante de Scer 
+    			    
+    - rna-NM_001179643.1 : Mauvaise topologie ( non monophyl ) + topo de perte : NR ++ 
+    
+    - rna-NM_001184298.1 : cluster de 4 avec 3 query contre la même subject : très très forte chance de perte
+    			    NR+++ donc pas bon, perte vraisemblable 
+    			    
+    - rna-XM_033909576.1 : La vérité j'ai menti tout à l'heure, c'est celle là la plus belle. NR---
+    			    Y a même un stop dans la query que demande le peuple ???
+    			    
+    			    
+    - rna-NM_001179266.1 : Topologie pour deux élongations indépendantes ? NR-- sans signal riboSeq. Quelques 
+    			    reads sur une méthionine proche du 5' 
+    			    
+    			    
+    - rna-XM_033913447.1 : Topologie de perte, NR++
+    
+    - rna-NM_001184382.1 / rna-XM_033911501.1 : NR++
+    
+    - rna-NM_001181842.1 : Cas d'école
+    
+    - rna-NM_001182960.1 : Cas d'école dans le tableau
+    
+    - rna-XM_033911993.1 / rna-NM_001181997.1 : Perte
+
+    - rna-NM_001182677.1 : presque cas d'école mais pas de signal RS
+    
+    - rna-XM_033909180.1 : Cas très intéressant : Elongate visiblement avéré ? NR-- sauf Scer, alors même
+    			    que Scer est annoté comme sans elongate dans notre génome. Cependant le RS nous 
+    			    montre une belle traduction => Traduction chez Cer + Par ?
+
+    - rna-XM_033913069.1 : Cas étrange : NR-- même chez Scer, cependant du Signal RS. Mais pas dans la 
+    			    même frame ! Une petite ORF en amont porte le signal ? Encore plus bizarre : 
+    			    La petite ORF avec une belle Meth n'est pas de la frame qui matche l'elongate !!!
+    			  
+    - rna-XM_033912480.1 : Chelou dans la même veine qu'au dessus, vérifié chez Sarb ( chez qui pas de   
+                           match ) pour s'assurer que pas une erreur d'annotation mais non il y a des stops
+                           NR--
+
+    - rna-XM_033911278.1 : Dans la même veine qu'au dessus ... Signal RS chez Scer, est ce qu'on verrait pas 				    en fait un très gros défaut d'annotation sur toutes les espèces ? Le gène est 				    jeune et ne match quasi personne en NR-- 
+
+
+    - rna-XM_033913212.1 / rna-NM_001183308.1 : Nr-- , vu chez Cer & Par 
+    
+    - rna-XM_033913136.1 : NR--, chez Scer pas de signal RS et des stop partout !!!!
+    
+    - rna-XM_033913936.1 : Nr--, uniquement chez Scer des bribes. En RS, très intéressant, encore des ORF en 
+    			    amont qui ont du signal malgré des stops inframe de la séquence génique ! 
+
+
+    - rna-NM_001184633.1 : Gène uniquement retrouvé chez Scer et Pastorianus, à garder sous la main comme 
+    			    métrique du pipeline automatisé
+    			    
+    			    
+    			    
+    
+Clusters mal regroupés 0.5 : 
+
+
+     - cluster_n4108 
+     
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+

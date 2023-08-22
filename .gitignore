@@ -1,3 +1,15 @@
+# Data input/output
+output/
+input/
+work/
+.vscode/
+
+
+
+
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
